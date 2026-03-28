@@ -1,0 +1,43 @@
+# Dependencies
+node_modules/
+
+# Expo / React Native
+mobile/.expo/
+mobile/dist/
+mobile/web-build/
+*.jks
+*.p8
+*.p12
+*.key
+*.mobileprovision
+*.orig.*
+
+# Env
+.env
+.env.local
+.env.*.local
+mobile/.env
+
+# Next.js
+web/.next/
+web/out/
+
+# Cursor — regras do projeto ok; skills/cache não
+.cursor/skills/
+.cursor/settings.json
+**/__pycache__/
+*.pyc
+
+# OS / IDE
+.DS_Store
+Thumbs.db
+*.log
+.idea/
+.vscode/
+
+# Supabase local (opcional)
+supabase/.branches
+supabase/.temp
+
+# Vercel (IDs locais após `vercel link`; não commitar tokens)
+web/.vercel

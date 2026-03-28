@@ -1,0 +1,16 @@
+@import "tailwindcss";
+
+@theme inline {
+  --color-dl-bg: #131313;
+  --color-dl-surface: #2a2a2a;
+  --color-dl-primary: #39ff14;
+  --color-dl-text: #f4f4f4;
+  --color-dl-muted: rgba(220, 235, 225, 0.72);
+  --color-dl-gold: #ffdb40;
+  --font-sans: var(--font-body), system-ui, sans-serif;
+  --font-display: var(--font-display), system-ui, sans-serif;
+}
+
+body {
+  font-family: var(--font-body), system-ui, sans-serif;
+}

@@ -1,0 +1,13 @@
+---
+description: Base UI/UX — aplicar skill ui-ux-pro-max em trabalho visual e de experiência
+alwaysApply: true
+---
+
+# UI/UX Pro Max como base
+
+- Em tarefas que alterem **aspeto visual**, **layout**, **CSS**, **HTML**, **shortcodes** de frente de loja, **WooCommerce** (templates, produto, loja) ou **experiência de utilização**, **lê primeiro** o ficheiro de skill (conteúdo completo):
+  `C:\Users\bielg\.cursor\skills\ui-ux-pro-max\SKILL.md`
+- Aplica o que for relevante: **acessibilidade** (contraste AA, foco visível, hierarquia de headings, não depender só de cor ou só de hover), **toque** (alvos ≥44px, espaçamento entre alvos), **`prefers-reduced-motion`**, **performance** (imagens, CLS), **tipografia e tokens** de cor coerentes com a identidade IARA MARÉ quando o projeto tiver guia (ex.: `iara-mare-identidade-visual.html`).
+- Para comandos CLI do skill (ex. `search.py`), o caminho dos scripts é:
+  `C:\Users\bielg\.cursor\skills\ui-ux-pro-max\scripts\search.py`
+- Responde em **português** quando o utilizador escrever em português.

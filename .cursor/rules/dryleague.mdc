@@ -1,0 +1,86 @@
+# Diretrizes de Design: O Sistema Visual de Alta Performance
+
+## 1. Visão Geral & Estrela do Norte: "O Atleta de Ferro"
+Este design system não é apenas um utilitário de rastreamento; é um treinador digital de elite. A Estrela do Norte criativa é o **"Brutalismo Ético de Luxo"**. O objetivo é fundir a estética crua e potente de aplicativos de alta performance esportiva com a sofisticação de interfaces financeiras premium.
+
+Diferente de apps comuns que utilizam grids rígidos e planos, este sistema utiliza **assimetria intencional** e **profundidade tonal**. Elementos de gamificação (troféus e raios) não são apenas ícones, mas "joias" visuais que brilham contra um abismo de preto profundo (`#0F0F0F`), criando um contraste que comunica foco absoluto e disciplina.
+
+---
+
+## 2. Paleta de Cores & Atmosfera
+A cor não é decorativa; é funcional e psicológica. O verde neon sinaliza vida e progresso; o vermelho vibrante sinaliza um alerta biológico de recaída.
+
+### 2.1. Tokens Principais
+- **Background Primário:** `#131313` (Base profunda para redução de fadiga ocular).
+- **Primary (Progresso/Sucesso):** `#39FF14` (Verde Neon de alta voltagem).
+- **Secondary (Alerta/Recaída):** `#FF3131` (Vermelho Vibrante).
+- **Tertiary (Financeiro/Recompensa):** `#FFDB40` (Ouro para moedas e conquistas).
+
+### 2.2. A Regra "No-Line" (Sem Bordas)
+**Proibição absoluta:** É proibido o uso de bordas sólidas de 1px para separar seções.
+- A hierarquia deve ser definida exclusivamente por mudanças de tom entre os containers (ex: um card `surface-container-high` sobre um fundo `surface-dim`).
+- **Nesting (Aninhamento):** Camadas de profundidade devem ser empilhadas como folhas de vidro fumê. O conteúdo mais importante deve estar no nível de elevação visual mais alto (`surface-container-highest`).
+
+### 2.3. Glassmorphism & Texturas Signature
+Para elementos flutuantes (modais de conquista, dashboards de moedas), utilize o efeito de vidro:
+- **Fundo:** `surface-variant` com 60% de opacidade.
+- **Backdrop-blur:** 12px a 20px.
+- **Gradientes de Assinatura:** Use gradientes lineares sutis (ex: de `primary` para `on-primary-container`) em CTAs principais para evitar a aparência de "chapado" e adicionar volume.
+
+---
+
+## 3. Tipografia: A Voz da Autoridade
+A tipografia combina a precisão técnica da **Space Grotesk** para displays e a legibilidade humana da **Manrope**.
+
+- **Display & Headlines (Space Grotesk):** Devem ser usadas em tamanhos generosos para celebrar marcos (ex: "10 DIAS DE STREAK"). A Space Grotesk traz um ar futurista e robusto.
+- **Body & Labels (Manrope):** Foco total em clareza. Use pesos *Medium* para garantir legibilidade sobre o fundo escuro.
+- **Escala de Impacto:** O contraste entre um `display-lg` (3.5rem) e um `label-sm` (0.68rem) cria o ritmo editorial que buscamos.
+
+---
+
+## 4. Elevação, Profundidade e "Ghost Borders"
+Neste sistema, o sombreamento tradicional é substituído por camadas tonais.
+
+- **Camadas de Superfície:**
+1. `surface-container-lowest` (`#0E0E0E`): Para áreas de input ou seções menos importantes.
+2. `surface` (`#131313`): O plano de base da aplicação.
+3. `surface-container-high` (`#2A2A2A`): Para cards de estatísticas principais.
+- **Shadows Ambientais:** Se um elemento precisar flutuar, a sombra deve ser vasta e etérea: Blur de 30px, opacidade de 6% em `#000000`.
+- **Ghost Border Fallback:** Se a acessibilidade exigir um contorno, use o token `outline-variant` com apenas 15% de opacidade. O objetivo é que a borda seja sentida, não vista.
+
+---
+
+## 5. Componentes de Assinatura
+
+### 5.1. Botões (Action Triggers)
+- **Primary:** Fundo `primary_container` (#39FF14), cantos arredondados (`lg`: 0.5rem). Sem bordas. Efeito de brilho interno sutil no topo (1px overlay branco 10%).
+- **Ghost/Tertiary:** Apenas texto com ícone de raio (`streak`), sem container visível até o hover.
+
+### 5.2. Cards de Progresso
+- **Sem Divisores:** Use o espaçamento de `8` (2rem) para separar informações dentro do card.
+- **Sombras Internas:** Para inputs e áreas de "depósito" de moedas, use sombras internas leves para criar a sensação de "escavação" na interface.
+
+### 5.3. Chips de Gamificação
+- Pequenos marcadores de status com `surface-bright` e texto em `primary`. Use para indicar níveis ou categorias de "liga".
+
+### 5.4. Dashboard de Moedas (R$)
+- Elementos financeiros devem usar a cor `tertiary_container`. O símbolo da moeda (R$) deve ter um peso tipográfico menor que o valor numérico para destacar o montante acumulado.
+
+---
+
+## 6. Do’s and Don’ts (O que fazer e o que não fazer)
+
+**Do’s (Sim):**
+- **Sim:** Use `primary-fixed-dim` para textos longos sobre fundo escuro para evitar o "halation" (quando o neon brilha demais e cansa a vista).
+- **Sim:** Aplique assimetria. Um card de conquista pode ter um canto superior direito com um raio que ultrapassa os limites do container.
+- **Sim:** Use o espaçamento `12` (3rem) para criar áreas de respiro editorial entre grandes blocos de dados.
+
+**Don’ts (Não):**
+- **Não:** Nunca use cinza puro para textos. Use `on-surface-variant` (tons levemente esverdeados) para manter a coesão cromática.
+- **Não:** Não use ícones genéricos de bibliotecas padrão sem customizar o peso da linha para "Bold" ou "Heavy".
+- **Não:** Evite sombras pretas pesadas em elementos pequenos; prefira o deslocamento de tom de fundo (layering).
+
+---
+
+## 7. Notas de Direção de Arte
+Ao desenhar as telas da DryLeague, lembre-se: o usuário está em uma jornada de autodomínio. A interface deve parecer uma **ferramenta de precisão**. Cada moeda ganha e cada troféu conquistado deve ter um tratamento visual de "recompensa máxima" — brilhos sutis, gradientes neon e tipografia imponente. Se a tela parecer um aplicativo de banco comum, você falhou. Ela deve parecer o painel de um supercarro à noite.

@@ -1,0 +1,60 @@
+{
+  "expo": {
+    "name": "DryLeague",
+    "slug": "dryleague",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "icon": "./assets/images/icon.png",
+    "scheme": "dryleague",
+    "userInterfaceStyle": "dark",
+    "splash": {
+      "image": "./assets/images/splash-icon.png",
+      "resizeMode": "contain",
+      "backgroundColor": "#0A0A0B"
+    },
+    "ios": {
+      "supportsTablet": true,
+      "bundleIdentifier": "com.dryleague.app",
+      "infoPlist": {
+        "NSPhotoLibraryUsageDescription": "A DryLeague usa fotos para validar treinos na comunidade.",
+        "NSCameraUsageDescription": "A DryLeague usa a câmera para registrar treinos com prova visual."
+      }
+    },
+    "android": {
+      "package": "com.dryleague.app",
+      "adaptiveIcon": {
+        "backgroundColor": "#0A0A0B",
+        "foregroundImage": "./assets/images/android-icon-foreground.png",
+        "backgroundImage": "./assets/images/android-icon-background.png",
+        "monochromeImage": "./assets/images/android-icon-monochrome.png"
+      },
+      "predictiveBackGestureEnabled": true
+    },
+    "web": {
+      "bundler": "metro",
+      "output": "static",
+      "favicon": "./assets/images/favicon.png"
+    },
+    "plugins": [
+      "expo-router",
+      "expo-image",
+      [
+        "expo-image-picker",
+        {
+          "photosPermission": "A DryLeague precisa de acesso às fotos para validar treinos.",
+          "cameraPermission": "A DryLeague usa a câmera para registrar treinos."
+        }
+      ]
+    ],
+    "experiments": {
+      "typedRoutes": true
+    },
+    "extra": {
+      "eas": {
+        "projectId": "SUBSTITUA_PELO_PROJECT_ID_DO_EAS"
+      },
+      "supabaseUrl": "",
+      "supabaseAnonKey": ""
+    }
+  }
+}
