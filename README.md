@@ -7,9 +7,9 @@ App social de fitness gamificado: treinos validados com **foto + descrição** (
 | Pasta | Descrição |
 |--------|-----------|
 | `mobile/` | App **Expo (React Native)** + Expo Router — iOS / Android / web estático |
-| `web/` | **Next.js** para termos, privacidade e landing — deploy na **Vercel** |
+| `web/` | **Next.js** (termos/privacidade em HTML) — opcional; o deploy principal na Vercel é o **Expo web** em `mobile/` |
 | `supabase/migrations/` | **SQL** inicial: tabelas, RLS, storage `workout-photos`, triggers de pontos |
-| `.github/workflows/ci.yml` | CI: `typecheck` do mobile + `build` do web |
+| `.github/workflows/ci.yml` | CI: `typecheck` do mobile + `expo export --platform web` |
 | `docs/DEPLOY.md` | **Supabase + Vercel + GitHub + EAS Secrets** (checklist) |
 
 ## Automatização local (Windows)
@@ -27,7 +27,7 @@ Guia completo e secrets do GitHub: **[docs/DEPLOY.md](docs/DEPLOY.md)**.
 - Node 20+
 - Conta [Supabase](https://supabase.com) (projeto novo)
 - (Opcional) [Expo EAS](https://docs.expo.dev/eas/) para build de loja
-- (Opcional) Conta [Vercel](https://vercel.com) apontando para a pasta `web/`
+- Conta [Vercel](https://vercel.com): no projeto, defina **Root Directory** = `mobile` (export estático do Expo = o que vês em `expo start --web`)
 
 ## Supabase
 
@@ -59,7 +59,7 @@ Variáveis vêm de `mobile/.env` (`EXPO_PUBLIC_*`). O ficheiro **`mobile/app.con
 ### App Store
 
 - Atualize `eas.json` e `app.json` → `extra.eas.projectId` com `eas init`.
-- Revise **termos/privacidade** em `web/` e o e-mail de suporte nos textos.
+- Revise **termos/privacidade** em `mobile/app/terms.tsx` e `privacy.tsx` (e cópia opcional em `web/`) e o e-mail de suporte nos textos.
 - **Ligas pagas**: integre **Stripe** (Checkout ou Payment Element) numa Edge Function e marque `league_members.payment_status = paid` após webhook; avalie exigências da **Apple** para o seu modelo (IAP vs fluxo web).
 
 ### Pagamentos e fraude
@@ -68,16 +68,22 @@ Variáveis vêm de `mobile/.env` (`EXPO_PUBLIC_*`). O ficheiro **`mobile/app.con
 - Denúncias: tabela `post_reports` já existe; ligue a um painel de moderação.
 - Fotos: bucket privado + URLs assinadas se quiser restringir leitura (ajuste RLS/policies).
 
-## Site legal (`web/`)
+## Deploy na Vercel (app Expo = mesmo que `expo start --web`)
+
+1. No painel Vercel → projeto **dryleague** → **Settings → General → Root Directory** = `mobile`.
+2. **Environment Variables** (Production): `EXPO_PUBLIC_SUPABASE_URL`, `EXPO_PUBLIC_SUPABASE_ANON_KEY`, e opcionalmente `EXPO_PUBLIC_LEGAL_TERMS_URL` / `EXPO_PUBLIC_LEGAL_PRIVACY_URL` (se não definir, na web usam-se `/terms` e `/privacy` do próprio deploy).
+3. Deploy: `cd mobile && npx vercel deploy --prod` ou push no Git com integração ligada.
+
+Build: `npm ci` + `npx expo export --platform web` → pasta `dist` (ver `mobile/vercel.json`).
+
+## Site Next opcional (`web/`)
 
 ```bash
 cd web
 npm run build
 ```
 
-Na Vercel: **Root Directory** = `web` (há `web/vercel.json`). Após o deploy, no `mobile/.env`:
-
-- `EXPO_PUBLIC_LEGAL_TERMS_URL` e `EXPO_PUBLIC_LEGAL_PRIVACY_URL` com as URLs reais (`…/terms`, `…/privacy`).
+Pode servir só para desenvolvimento local ou outro domínio; o utilizador final na Vercel deve ver o **Expo** conforme acima.
 
 Guia completo: **[docs/DEPLOY.md](docs/DEPLOY.md)**.
 
@@ -101,3 +107,4 @@ O CI (`.github/workflows/ci.yml`) corre em `main`/`master`. Não commites `mobil
 ---
 
 Modelo jurídico nas páginas Next é **informativo**; valide com advogado antes do lançamento comercial.
+# euduvido
