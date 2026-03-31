@@ -1,42 +1,64 @@
-import { Pill } from '@/components/ui/Pill';
+import { LoadingLogo } from '@/components/ui/LoadingLogo';
 import { Screen } from '@/components/ui/Screen';
-import { colors, fonts, radii, spacing } from '@/constants/theme';
+import { tabListBottomPadding } from '@/constants/tabBar';
+import { colors, fonts, screenPaddingX, spacing, tintForId } from '@/constants/theme';
 import { useAuth } from '@/context/AuthContext';
-import { fetchUserPosts } from '@/lib/api';
+import { fetchBadgesWithEarned, fetchFollowCounts, updateProfileAvatar } from '@/lib/api';
+import { fetchUserChallenges } from '@/lib/challengesApi';
+import { badgeAccentColor, badgeIconName } from '@/lib/badges';
+import { BETS_PER_LEVEL, userLevelProgress } from '@/lib/userLevel';
 import { profileInitials } from '@/lib/format';
-import type { PostWithAuthor } from '@/types/models';
+import type { BadgeWithEarned, ChallengeWithCreator } from '@/types/models';
 import { Ionicons } from '@expo/vector-icons';
 import { Image } from 'expo-image';
+import * as ImagePicker from 'expo-image-picker';
+import type { Href } from 'expo-router';
 import { Link } from 'expo-router';
 import { useFocusEffect } from '@react-navigation/native';
 import { useCallback, useState } from 'react';
-import { Dimensions, FlatList, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import {
+  ActionSheetIOS,
+  Alert,
+  Dimensions,
+  FlatList,
+  Platform,
+  Pressable,
+  ScrollView,
+  StyleSheet,
+  Text,
+  useWindowDimensions,
+  View,
+} from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 const COL_GAP = 2;
 const numColumns = 3;
-const width = Dimensions.get('window').width - spacing.md * 2;
+const width = Dimensions.get('window').width - screenPaddingX * 2;
 const cell = (width - COL_GAP * (numColumns - 1)) / numColumns;
-const TAB_BAR_OFFSET = 96;
 
-const BADGE_ROW = [
-  { icon: 'flame-outline' as const, name: 'Streak 7d', color: '#FF6B35', earned: true },
-  { icon: 'barbell-outline' as const, name: '1º Treino', color: colors.accent, earned: true },
-  { icon: 'flash-outline' as const, name: 'Streak 30d', color: colors.gold, earned: true },
-  { icon: 'trophy-outline' as const, name: 'Liga', color: colors.gold, earned: true },
-  { icon: 'moon-outline' as const, name: 'Madrugador', color: colors.purple, earned: false },
-  { icon: 'analytics-outline' as const, name: '100 pts', color: colors.blue, earned: true },
-  { icon: 'shield-checkmark-outline' as const, name: 'Disciplina', color: colors.accent, earned: true },
-  { icon: 'ribbon-outline' as const, name: 'Top 1', color: colors.gold, earned: false },
-];
+const BADGE_PREVIEW = 10;
+
+const STAT_GAP = 12;
 
 export default function ProfileScreen() {
   const insets = useSafeAreaInsets();
-  const { profile, user } = useAuth();
-  const [posts, setPosts] = useState<PostWithAuthor[]>([]);
+  const { width: windowWidth } = useWindowDimensions();
+  const { profile, user, refreshProfile } = useAuth();
+  const [challenges, setChallenges] = useState<ChallengeWithCreator[]>([]);
+  const [avatarBusy, setAvatarBusy] = useState(false);
+  const [badges, setBadges] = useState<BadgeWithEarned[]>([]);
+  const [followCounts, setFollowCounts] = useState({ followers: 0, following: 0 });
 
   const load = useCallback(async () => {
-    if (user?.id) setPosts(await fetchUserPosts(user.id));
+    if (!user?.id) return;
+    const [ch, b, fc] = await Promise.all([
+      fetchUserChallenges(user.id),
+      fetchBadgesWithEarned(user.id),
+      fetchFollowCounts(user.id),
+    ]);
+    setChallenges(ch);
+    setBadges(b);
+    setFollowCounts(fc);
   }, [user?.id]);
 
   useFocusEffect(
@@ -45,12 +67,93 @@ export default function ProfileScreen() {
     }, [load]),
   );
 
+  const applyAvatarUri = useCallback(
+    async (uri: string) => {
+      if (!user?.id) return;
+      setAvatarBusy(true);
+      const err = await updateProfileAvatar(user.id, uri);
+      setAvatarBusy(false);
+      if (err) {
+        if (Platform.OS === 'web') window.alert(err);
+        else Alert.alert('Erro', err);
+      } else await refreshProfile();
+    },
+    [user?.id, refreshProfile],
+  );
+
+  const runPickLibrary = useCallback(async () => {
+    const perm = await ImagePicker.requestMediaLibraryPermissionsAsync();
+    if (!perm.granted) {
+      if (Platform.OS === 'web') window.alert('Precisamos de acesso às fotos.');
+      else Alert.alert('Permissão', 'Precisamos de acesso às fotos.');
+      return;
+    }
+    const res = await ImagePicker.launchImageLibraryAsync({
+      mediaTypes: ['images'],
+      quality: 0.85,
+      ...(Platform.OS !== 'web'
+        ? { allowsEditing: true, aspect: [1, 1] as [number, number] }
+        : {}),
+    });
+    if (!res.canceled && res.assets[0]) await applyAvatarUri(res.assets[0].uri);
+  }, [applyAvatarUri]);
+
+  const runPickCamera = useCallback(async () => {
+    const perm = await ImagePicker.requestCameraPermissionsAsync();
+    if (!perm.granted) {
+      Alert.alert('Permissão', 'Precisamos da câmera.');
+      return;
+    }
+    const res = await ImagePicker.launchCameraAsync({
+      quality: 0.85,
+      ...(Platform.OS !== 'web'
+        ? { allowsEditing: true, aspect: [1, 1] as [number, number] }
+        : {}),
+    });
+    if (!res.canceled && res.assets[0]) await applyAvatarUri(res.assets[0].uri);
+  }, [applyAvatarUri]);
+
+  const openAvatarPicker = useCallback(() => {
+    if (!user?.id || avatarBusy) return;
+    // No web, Alert com vários botões costuma não fazer nada — abre logo a galeria.
+    if (Platform.OS === 'web') {
+      void runPickLibrary();
+      return;
+    }
+    if (Platform.OS === 'ios') {
+      ActionSheetIOS.showActionSheetWithOptions(
+        {
+          options: ['Cancelar', 'Galeria', 'Câmera'],
+          cancelButtonIndex: 0,
+        },
+        (i) => {
+          if (i === 1) void runPickLibrary();
+          else if (i === 2) void runPickCamera();
+        },
+      );
+      return;
+    }
+    Alert.alert('Foto de perfil', 'A imagem aparece para todos no feed, ranking e no teu perfil público.', [
+      { text: 'Cancelar', style: 'cancel' },
+      { text: 'Galeria', onPress: () => void runPickLibrary() },
+      { text: 'Câmera', onPress: () => void runPickCamera() },
+    ]);
+  }, [user?.id, avatarBusy, runPickLibrary, runPickCamera]);
+
   if (!profile || !user) return null;
 
   const initials = profileInitials(profile.display_name, profile.username);
+  const earnedBadges = badges.filter((x) => x.earned).length;
+  const badgePreview = badges.slice(0, BADGE_PREVIEW);
+  const duelsWon = profile.total_challenges_completed ?? 0;
+  const betsPlaced = profile.total_challenges_created ?? 0;
+  const levelProg = userLevelProgress(betsPlaced);
+  const levelBarPct = levelProg.maxed
+    ? 100
+    : Math.min(100, (levelProg.inLevel / BETS_PER_LEVEL) * 100);
 
   const header = (
-    <View style={{ paddingTop: Math.max(insets.top, 12) }}>
+    <View style={styles.headerRoot}>
       <View style={styles.headTop}>
         <Text style={[styles.brand, { fontFamily: fonts.display }]}>PERFIL</Text>
         <Link href="/(app)/settings" asChild>
@@ -62,75 +165,133 @@ export default function ProfileScreen() {
 
       <View style={styles.profileRow}>
         <View>
-          <View style={styles.bigAvatarWrap}>
-            {profile.avatar_url ? (
-              <Image source={{ uri: profile.avatar_url }} style={styles.bigAvatar} />
-            ) : (
-              <View style={[styles.bigAvatar, styles.bigAvatarPh]}>
-                <Text style={[styles.bigAvatarTxt, { fontFamily: fonts.display }]}>{initials}</Text>
+          <Pressable
+            onPress={openAvatarPicker}
+            disabled={avatarBusy}
+            accessibilityRole="button"
+            accessibilityLabel="Alterar foto de perfil"
+            hitSlop={8}
+            style={styles.avatarPressable}>
+            <View style={styles.bigAvatarWrap} collapsable={false}>
+              {profile.avatar_url ? (
+                <Image
+                  source={{ uri: profile.avatar_url }}
+                  style={styles.bigAvatar}
+                  pointerEvents="none"
+                />
+              ) : (
+                <View style={[styles.bigAvatar, styles.bigAvatarPh]}>
+                  <Text style={[styles.bigAvatarTxt, { fontFamily: fonts.display }]}>{initials}</Text>
+                </View>
+              )}
+              <View style={styles.avatarEditBadge}>
+                {avatarBusy ? (
+                  <LoadingLogo size="small" />
+                ) : (
+                  <Ionicons name="camera" size={16} color={colors.accent} />
+                )}
               </View>
-            )}
-            <View style={styles.verified}>
-              <Ionicons name="checkmark" size={12} color="#000" />
             </View>
-          </View>
+          </Pressable>
         </View>
         <View style={{ flex: 1 }}>
           <Text style={[styles.displayName, { fontFamily: fonts.bodyBold }]}>{profile.display_name || profile.username}</Text>
           <Text style={[styles.handle, { fontFamily: fonts.body }]}>@{profile.username}</Text>
-          <View style={styles.pillRow}>
-            <Pill variant="accent">{`Nível ${profile.level}`}</Pill>
-            <Pill variant="gold">{`${profile.streak_current} streak`}</Pill>
+          <View style={styles.socialRow}>
+            <Link href={`/(app)/user/${user.id}/followers`} asChild>
+              <Pressable accessibilityRole="button">
+                <Text style={[styles.socialStat, { fontFamily: fonts.bodySemi }]}>
+                  <Text style={styles.socialNum}>{followCounts.followers}</Text> seguidores
+                </Text>
+              </Pressable>
+            </Link>
+            <Text style={styles.socialDot}>·</Text>
+            <Link href={`/(app)/user/${user.id}/following`} asChild>
+              <Pressable accessibilityRole="button">
+                <Text style={[styles.socialStat, { fontFamily: fonts.bodySemi }]}>
+                  <Text style={styles.socialNum}>{followCounts.following}</Text> seguindo
+                </Text>
+              </Pressable>
+            </Link>
           </View>
         </View>
       </View>
 
-      <View style={styles.statGrid}>
-        <View style={styles.statBox}>
-          <Text style={[styles.statNum, { fontFamily: fonts.display, color: colors.accent }]}>{profile.points}</Text>
-          <Text style={[styles.statLbl, { fontFamily: fonts.body }]}>PONTOS TOTAIS</Text>
+      <View style={styles.levelCard}>
+        <View style={styles.levelCardTop}>
+          <View style={styles.levelTitleRow}>
+            <Ionicons name="trophy" size={18} color={colors.gold} />
+            <Text style={[styles.levelTitle, { fontFamily: fonts.bodySemi }]}>
+              Nível {profile.level}
+            </Text>
+          </View>
+          <Text style={[styles.levelSub, { fontFamily: fonts.body }]}>
+            {levelProg.maxed
+              ? 'Nível máximo — lenda das apostas!'
+              : levelProg.betsUntilNext === 1
+                ? `Sobe para o nível ${levelProg.level + 1} na próxima aposta!`
+                : `${levelProg.betsUntilNext} apostas até o nível ${levelProg.level + 1}`}
+          </Text>
         </View>
-        <View style={styles.statBox}>
-          <Text style={[styles.statNum, { fontFamily: fonts.display, color: colors.blue }]}>{posts.length}</Text>
-          <Text style={[styles.statLbl, { fontFamily: fonts.body }]}>TREINOS</Text>
+        <View style={styles.levelBarTrack}>
+          <View style={[styles.levelBarFill, { width: `${levelBarPct}%` }]} />
         </View>
-        <View style={styles.statBox}>
-          <Text style={[styles.statNum, { fontFamily: fonts.display, color: colors.gold }]}>—</Text>
-          <Text style={[styles.statLbl, { fontFamily: fonts.body }]}>BADGES</Text>
+        <Text style={[styles.levelFoot, { fontFamily: fonts.body }]}>
+          {betsPlaced} aposta{betsPlaced === 1 ? '' : 's'} criada{betsPlaced === 1 ? '' : 's'} · +1 nível a cada {BETS_PER_LEVEL} apostas
+        </Text>
+      </View>
+
+      <View style={styles.statRow}>
+        <View style={[styles.statBox, styles.statBoxHalf]}>
+          <Text style={[styles.statNum, styles.statNumWins, { fontFamily: fonts.display }]}>{duelsWon}</Text>
+          <Text style={[styles.statLbl, { fontFamily: fonts.body }]}>DUELOS VENCIDOS</Text>
         </View>
-        <View style={styles.statBox}>
-          <Text style={[styles.statNum, { fontFamily: fonts.display, color: colors.purple }]}>0</Text>
-          <Text style={[styles.statLbl, { fontFamily: fonts.body }]}>LIGAS GANHAS</Text>
+        <View style={[styles.statBox, styles.statBoxHalf]}>
+          <Text style={[styles.statNum, styles.statNumBadges, { fontFamily: fonts.display }]}>
+            {earnedBadges}
+          </Text>
+          <Text style={[styles.statLbl, { fontFamily: fonts.body }]}>CONQUISTAS</Text>
         </View>
       </View>
 
       <View style={styles.badgeSection}>
         <View style={styles.badgeHead}>
           <Text style={[styles.badgeTitle, { fontFamily: fonts.bodySemi }]}>Conquistas</Text>
-          <Text style={[styles.badgeLink, { fontFamily: fonts.bodySemi }]}>Ver todas</Text>
+          <Link href="/(app)/achievements" asChild>
+            <Pressable accessibilityRole="button" accessibilityLabel="Ver todas as conquistas" hitSlop={8}>
+              <Text style={[styles.badgeLink, { fontFamily: fonts.bodySemi }]}>Ver todas</Text>
+            </Pressable>
+          </Link>
         </View>
         <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.badgeScroll}>
-          {BADGE_ROW.map((b, i) => (
-            <View key={i} style={[styles.badgeItem, !b.earned && { opacity: 0.35 }]}>
-              <View
-                style={[
-                  styles.badgeIcon,
-                  {
-                    backgroundColor: b.earned ? `${b.color}22` : colors.bgCardAlt,
-                    borderColor: b.earned ? `${b.color}44` : colors.border,
-                  },
-                ]}>
-                <Ionicons name={b.icon} size={22} color={b.earned ? b.color : colors.textDim} />
+          {badgePreview.length === 0 ? (
+            <Text style={[styles.badgeEmpty, { fontFamily: fonts.body }]}>Nenhuma conquista no catálogo.</Text>
+          ) : null}
+          {badgePreview.map((b) => {
+            const accent = badgeAccentColor(b.icon_key);
+            const icon = badgeIconName(b.icon_key);
+            return (
+              <View key={b.id} style={[styles.badgeItem, !b.earned && { opacity: 0.35 }]}>
+                <View
+                  style={[
+                    styles.badgeIcon,
+                    {
+                      backgroundColor: b.earned ? `${accent}22` : colors.bgCardAlt,
+                      borderColor: b.earned ? `${accent}44` : colors.border,
+                    },
+                  ]}>
+                  <Ionicons name={icon} size={22} color={b.earned ? accent : colors.textDim} />
+                </View>
+                <Text style={[styles.badgeName, { fontFamily: fonts.body }]} numberOfLines={2}>
+                  {b.name}
+                </Text>
               </View>
-              <Text style={[styles.badgeName, { fontFamily: fonts.body }]} numberOfLines={2}>
-                {b.name}
-              </Text>
-            </View>
-          ))}
+            );
+          })}
         </ScrollView>
       </View>
 
-      <Text style={[styles.gridTitle, { fontFamily: fonts.bodySemi }]}>Treinos Registrados</Text>
+      <Text style={[styles.gridTitle, { fontFamily: fonts.bodySemi }]}>Meus desafios</Text>
     </View>
   );
 
@@ -138,21 +299,38 @@ export default function ProfileScreen() {
     <Screen padded={false} edges={['top']}>
       <FlatList
         ListHeaderComponent={header}
-        data={posts}
+        /** Com `numColumns`, no web o cabeçalho herda a largura de uma célula — força largura do ecrã para o grid 2×2. */
+        ListHeaderComponentStyle={{ width: windowWidth }}
+        data={challenges}
         numColumns={numColumns}
         keyExtractor={(item) => item.id}
-        columnWrapperStyle={{ gap: COL_GAP, paddingHorizontal: spacing.md }}
+        removeClippedSubviews={false}
+        columnWrapperStyle={{ gap: COL_GAP, paddingHorizontal: screenPaddingX }}
         contentContainerStyle={{
-          paddingBottom: insets.bottom + TAB_BAR_OFFSET,
+          paddingBottom: tabListBottomPadding(insets.bottom) + 56,
           gap: COL_GAP,
         }}
         ListEmptyComponent={
-          <Text style={[styles.empty, { fontFamily: fonts.body }]}>Nenhum treino no grid ainda.</Text>
+          <Text style={[styles.empty, { fontFamily: fonts.body }]}>Crie sua primeira aposta pelo botão +.</Text>
         }
         renderItem={({ item, index }) => (
-          <Link href={`/(app)/post/${item.id}`} asChild>
-            <Pressable style={{ width: cell, height: cell }} accessibilityLabel={`Treino ${index + 1}`}>
-              <Image source={{ uri: item.image_url }} style={styles.thumb} contentFit="cover" />
+          <Link href={`/(app)/challenge/${item.id}` as Href} asChild>
+            <Pressable style={{ width: cell, height: cell }} accessibilityLabel={`Desafio ${index + 1}`}>
+              {item.cover_image_url ? (
+                <Image source={{ uri: item.cover_image_url }} style={styles.thumb} contentFit="cover" />
+              ) : (
+                <View
+                  style={[
+                    styles.thumb,
+                    {
+                      backgroundColor: tintForId(item.id),
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                    },
+                  ]}>
+                  <Ionicons name="flag" size={22} color="rgba(255,255,255,0.4)" />
+                </View>
+              )}
             </Pressable>
           </Link>
         )}
@@ -162,15 +340,23 @@ export default function ProfileScreen() {
 }
 
 const styles = StyleSheet.create({
+  headerRoot: {
+    alignSelf: 'stretch',
+  },
   headTop: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    paddingHorizontal: spacing.md,
+    paddingHorizontal: screenPaddingX,
     marginBottom: 20,
   },
   brand: { fontSize: 28, color: colors.text, letterSpacing: 1 },
-  profileRow: { flexDirection: 'row', gap: 16, paddingHorizontal: spacing.md, marginBottom: 20 },
-  bigAvatarWrap: { position: 'relative' },
+  profileRow: { flexDirection: 'row', gap: 16, paddingHorizontal: screenPaddingX, marginBottom: 20 },
+  avatarPressable: { alignSelf: 'flex-start', borderRadius: 36 },
+  bigAvatarWrap: {
+    position: 'relative',
+    width: 72,
+    height: 72,
+  },
   bigAvatar: {
     width: 72,
     height: 72,
@@ -179,49 +365,80 @@ const styles = StyleSheet.create({
   },
   bigAvatarPh: { alignItems: 'center', justifyContent: 'center' },
   bigAvatarTxt: { fontSize: 24, color: colors.accent },
-  verified: {
+  avatarEditBadge: {
     position: 'absolute',
     bottom: 0,
-    right: 0,
-    width: 22,
-    height: 22,
-    borderRadius: 11,
-    backgroundColor: colors.accent,
+    left: 0,
+    width: 26,
+    height: 26,
+    borderRadius: 13,
+    backgroundColor: 'rgba(0,0,0,0.65)',
     alignItems: 'center',
     justifyContent: 'center',
     borderWidth: 2,
     borderColor: colors.bg,
   },
   displayName: { fontSize: 18, fontWeight: '700', color: colors.text },
-  handle: { fontSize: 13, color: colors.textMuted, marginTop: 4, marginBottom: 8 },
-  pillRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 6 },
-  statGrid: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: 12,
-    paddingHorizontal: spacing.md,
+  handle: { fontSize: 13, color: colors.textMuted, marginTop: 4, marginBottom: 6 },
+  socialRow: { flexDirection: 'row', alignItems: 'center', flexWrap: 'wrap', gap: 6, marginBottom: 8 },
+  socialStat: { fontSize: 13, color: colors.textMuted },
+  socialNum: { color: colors.text, fontWeight: '600' },
+  socialDot: { color: colors.textDim, fontSize: 13 },
+  levelCard: {
+    marginHorizontal: screenPaddingX,
     marginBottom: 20,
+    padding: 16,
+    borderRadius: 14,
+    backgroundColor: colors.bgCardAlt,
+    borderWidth: 1,
+    borderColor: colors.border,
+  },
+  levelCardTop: { marginBottom: 10 },
+  levelTitleRow: { flexDirection: 'row', alignItems: 'center', gap: 8 },
+  levelTitle: { fontSize: 17, fontWeight: '700', color: colors.text },
+  levelSub: { fontSize: 13, color: colors.textMuted, marginTop: 6, lineHeight: 18 },
+  levelBarTrack: {
+    height: 8,
+    borderRadius: 4,
+    backgroundColor: colors.border,
+    overflow: 'hidden',
+  },
+  levelBarFill: {
+    height: '100%',
+    borderRadius: 4,
+    backgroundColor: colors.accent,
+  },
+  levelFoot: { fontSize: 11, color: colors.textDim, marginTop: 10 },
+  statRow: {
+    flexDirection: 'row',
+    gap: STAT_GAP,
+    paddingHorizontal: screenPaddingX,
+    marginBottom: 20,
+    width: '100%',
   },
   statBox: {
-    width: (Dimensions.get('window').width - spacing.md * 2 - 12) / 2,
     backgroundColor: colors.bgCardAlt,
     borderRadius: 14,
     padding: 16,
     borderWidth: 1,
     borderColor: colors.border,
+    alignItems: 'center',
   },
-  statNum: { fontSize: 32, lineHeight: 36 },
-  statLbl: { fontSize: 11, color: colors.textMuted, marginTop: 4 },
+  statBoxHalf: { flex: 1, minWidth: 0 },
+  statNum: { fontSize: 32, lineHeight: 36, textAlign: 'center' },
+  statNumWins: { color: colors.accent },
+  statNumBadges: { color: colors.gold },
+  statLbl: { fontSize: 11, color: colors.textMuted, marginTop: 4, textAlign: 'center', alignSelf: 'stretch' },
   badgeSection: { marginBottom: 20 },
   badgeHead: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    paddingHorizontal: spacing.md,
+    paddingHorizontal: screenPaddingX,
     marginBottom: 12,
   },
   badgeTitle: { fontSize: 16, fontWeight: '600', color: colors.text },
   badgeLink: { fontSize: 13, color: colors.accent },
-  badgeScroll: { paddingHorizontal: spacing.md, gap: 12 },
+  badgeScroll: { paddingHorizontal: screenPaddingX, gap: 12 },
   badgeItem: { width: 72, alignItems: 'center', gap: 6 },
   badgeIcon: {
     width: 52,
@@ -232,12 +449,13 @@ const styles = StyleSheet.create({
     borderWidth: 1,
   },
   badgeName: { fontSize: 10, color: colors.textMuted, textAlign: 'center' },
-  gridTitle: { color: colors.text, paddingHorizontal: spacing.md, marginBottom: spacing.sm },
+  badgeEmpty: { color: colors.textMuted, fontSize: 12, paddingVertical: 8, maxWidth: 280 },
+  gridTitle: { color: colors.text, paddingHorizontal: screenPaddingX, marginBottom: spacing.sm },
   thumb: {
     width: '100%',
     height: '100%',
     borderRadius: 4,
     backgroundColor: colors.bgCardAlt,
   },
-  empty: { color: colors.textMuted, paddingHorizontal: spacing.lg },
+  empty: { color: colors.textMuted, paddingHorizontal: screenPaddingX },
 });

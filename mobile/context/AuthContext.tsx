@@ -1,3 +1,5 @@
+import { fetchProfileWithMeta } from '@/lib/profileFetch';
+import { notifyError } from '@/lib/notify';
 import { isSupabaseConfigured, supabase } from '@/lib/supabase';
 import type { Profile } from '@/types/models';
 import type { Session, User } from '@supabase/supabase-js';
@@ -22,24 +24,24 @@ type AuthContextValue = {
 
 const AuthContext = createContext<AuthContextValue | undefined>(undefined);
 
-async function fetchProfile(userId: string): Promise<Profile | null> {
-  if (!isSupabaseConfigured) return null;
-  const { data, error } = await supabase
-    .from('profiles')
-    .select('*')
-    .eq('id', userId)
-    .single();
-  if (error) {
-    console.warn('fetchProfile', error.message);
-    return null;
-  }
-  return data as Profile;
-}
+const PROFILE_ISSUE_TOAST =
+  'Esta conta não existe ou não tem perfil registado na base de dados.';
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [session, setSession] = useState<Session | null>(null);
+  const [sessionReady, setSessionReady] = useState(false);
   const [profile, setProfile] = useState<Profile | null>(null);
-  const [loading, setLoading] = useState(true);
+  const [profileReady, setProfileReady] = useState(false);
+
+  const userId = session?.user?.id;
+  const loading = !sessionReady || (Boolean(userId) && !profileReady);
+
+  const signOut = useCallback(async () => {
+    if (isSupabaseConfigured) await supabase.auth.signOut();
+    setSession(null);
+    setProfile(null);
+    setProfileReady(true);
+  }, []);
 
   const refreshProfile = useCallback(async () => {
     const uid = session?.user?.id;
@@ -47,13 +49,19 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       setProfile(null);
       return;
     }
-    const p = await fetchProfile(uid);
+    const { profile: p, issue } = await fetchProfileWithMeta(uid);
+    if (issue) {
+      queueMicrotask(() => notifyError(PROFILE_ISSUE_TOAST, 'Eu Duvido!'));
+      await signOut();
+      return;
+    }
     setProfile(p);
-  }, [session?.user?.id]);
+  }, [session?.user?.id, signOut]);
 
   useEffect(() => {
     if (!isSupabaseConfigured) {
-      setLoading(false);
+      setSessionReady(true);
+      setProfileReady(true);
       return;
     }
 
@@ -61,7 +69,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     supabase.auth.getSession().then(({ data: { session: s } }) => {
       if (!mounted) return;
       setSession(s);
-      setLoading(false);
+      setSessionReady(true);
     });
 
     const {
@@ -77,18 +85,32 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   useEffect(() => {
-    if (!session?.user?.id || !isSupabaseConfigured) {
-      setProfile(null);
+    if (!sessionReady || !isSupabaseConfigured) {
       return;
     }
-    fetchProfile(session.user.id).then(setProfile);
-  }, [session?.user?.id]);
+    if (!userId) {
+      setProfile(null);
+      setProfileReady(true);
+      return;
+    }
 
-  const signOut = useCallback(async () => {
-    if (isSupabaseConfigured) await supabase.auth.signOut();
-    setSession(null);
-    setProfile(null);
-  }, []);
+    setProfileReady(false);
+    let cancelled = false;
+    fetchProfileWithMeta(userId).then(async ({ profile: p, issue }) => {
+      if (cancelled) return;
+      if (issue) {
+        queueMicrotask(() => notifyError(PROFILE_ISSUE_TOAST, 'Eu Duvido!'));
+        await signOut();
+        return;
+      }
+      if (cancelled) return;
+      setProfile(p);
+      setProfileReady(true);
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [sessionReady, userId, signOut]);
 
   const value = useMemo<AuthContextValue>(
     () => ({

@@ -1,10 +1,15 @@
+import { BrandLogo } from '@/components/BrandLogo';
 import { PrimaryButton } from '@/components/ui/PrimaryButton';
 import { Screen } from '@/components/ui/Screen';
-import { colors, fonts, radii, spacing } from '@/constants/theme';
+import { colors, fonts, formTextInputStyle, screenPaddingX, spacing } from '@/constants/theme';
+import { useAuth } from '@/context/AuthContext';
+import { formatAuthSignInError } from '@/lib/authErrors';
+import { notifyError } from '@/lib/notify';
 import { isSupabaseConfigured, supabase } from '@/lib/supabase';
-import { Link } from 'expo-router';
+import { Ionicons } from '@expo/vector-icons';
+import { Link, useRouter } from 'expo-router';
 import * as WebBrowser from 'expo-web-browser';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import {
   Alert,
   KeyboardAvoidingView,
@@ -19,15 +24,23 @@ import {
 WebBrowser.maybeCompleteAuthSession();
 
 export default function LoginScreen() {
+  const router = useRouter();
+  const { user, loading: authLoading } = useAuth();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    if (!authLoading && user) {
+      router.replace('/');
+    }
+  }, [authLoading, user, router]);
 
   if (!isSupabaseConfigured) {
     return (
       <Screen>
         <View style={styles.center}>
-          <Text style={[styles.title, { fontFamily: fonts.display }]}>DryLeague</Text>
+          <BrandLogo maxWidth={260} style={{ marginBottom: spacing.lg }} />
           <Text style={[styles.hint, { fontFamily: fonts.body }]}>
             Configure EXPO_PUBLIC_SUPABASE_URL e EXPO_PUBLIC_SUPABASE_ANON_KEY no arquivo .env ou em
             app.json → expo.extra.
@@ -39,16 +52,27 @@ export default function LoginScreen() {
 
   async function signIn() {
     if (!email.trim() || !password) {
-      Alert.alert('Campos obrigatórios', 'Preencha e-mail e senha.');
+      notifyError('Preencha e-mail e senha.', 'Campos obrigatórios');
       return;
     }
     setLoading(true);
-    const { error } = await supabase.auth.signInWithPassword({
-      email: email.trim(),
-      password,
-    });
-    setLoading(false);
-    if (error) Alert.alert('Não foi possível entrar', error.message);
+    try {
+      const { error } = await supabase.auth.signInWithPassword({
+        email: email.trim(),
+        password,
+      });
+      if (error) {
+        const text = formatAuthSignInError(error);
+        queueMicrotask(() => notifyError(text, 'Não foi possível entrar'));
+        return;
+      }
+      router.replace('/');
+    } catch (e) {
+      const msg = e instanceof Error ? e.message : String(e);
+      queueMicrotask(() => notifyError(msg || 'Falha de rede ou tempo esgotado.', 'Não foi possível entrar'));
+    } finally {
+      setLoading(false);
+    }
   }
 
   return (
@@ -57,11 +81,9 @@ export default function LoginScreen() {
         behavior={Platform.OS === 'ios' ? 'padding' : undefined}
         style={styles.flex}>
         <View style={styles.pad}>
-          <Text style={[styles.brand, { fontFamily: fonts.display }]} accessibilityRole="header">
-            DryLeague
-          </Text>
+          <BrandLogo maxWidth={300} style={{ marginBottom: spacing.md }} />
           <Text style={[styles.sub, { fontFamily: fonts.body }]}>
-            Treino validado. Pontos reais. Ligas privadas.
+            Entre para ver desafios, apostas em jogo e quem na comunidade acredita em você — ou duvida.
           </Text>
 
           <Text style={[styles.label, { fontFamily: fonts.bodySemi }]} nativeID="login-email-label">
@@ -73,10 +95,10 @@ export default function LoginScreen() {
             autoComplete="email"
             keyboardType="email-address"
             placeholder="voce@email.com"
-            placeholderTextColor={colors.onSurfaceVariant}
+            placeholderTextColor={colors.textMuted}
             value={email}
             onChangeText={setEmail}
-            style={[styles.input, { fontFamily: fonts.body }]}
+            style={[formTextInputStyle, { fontFamily: fonts.body, minHeight: 52 }]}
           />
 
           <Text style={[styles.label, { fontFamily: fonts.bodySemi }]} nativeID="login-pass-label">
@@ -86,18 +108,29 @@ export default function LoginScreen() {
             accessibilityLabelledBy="login-pass-label"
             secureTextEntry
             placeholder="••••••••"
-            placeholderTextColor={colors.onSurfaceVariant}
+            placeholderTextColor={colors.textMuted}
             value={password}
             onChangeText={setPassword}
-            style={[styles.input, { fontFamily: fonts.body }]}
+            returnKeyType="go"
+            onSubmitEditing={signIn}
+            style={[formTextInputStyle, { fontFamily: fonts.body, minHeight: 52 }]}
           />
 
           <PrimaryButton title="Entrar" onPress={signIn} loading={loading} style={{ marginTop: spacing.lg }} />
+
+          <View style={styles.forgotRow}>
+            <Link href="/(auth)/forgot-password" asChild>
+              <Pressable accessibilityRole="link" hitSlop={8}>
+                <Text style={[styles.link, { fontFamily: fonts.bodySemi }]}>Esqueci a senha</Text>
+              </Pressable>
+            </Link>
+          </View>
 
           <Text style={[styles.oauthHint, { fontFamily: fonts.body }]}>Login social</Text>
           <PrimaryButton
             title="Continuar com Apple"
             variant="secondary"
+            leftIcon={<Ionicons name="logo-apple" size={22} color={colors.onPrimary} />}
             onPress={() =>
               Alert.alert(
                 'Apple Sign In',
@@ -109,6 +142,7 @@ export default function LoginScreen() {
           <PrimaryButton
             title="Continuar com Google"
             variant="ghost"
+            leftIcon={<Ionicons name="logo-google" size={22} color={colors.text} />}
             onPress={() =>
               Alert.alert(
                 'Google',
@@ -134,24 +168,14 @@ export default function LoginScreen() {
 
 const styles = StyleSheet.create({
   flex: { flex: 1 },
-  pad: { flex: 1, padding: spacing.lg, paddingTop: spacing.xxl, justifyContent: 'center' },
-  brand: { fontSize: 40, color: colors.primary, letterSpacing: -1 },
-  sub: { color: colors.onSurfaceVariant, marginTop: spacing.sm, marginBottom: spacing.xl, fontSize: 15 },
-  label: { color: colors.onSurface, marginBottom: spacing.xs, marginTop: spacing.md },
-  input: {
-    backgroundColor: colors.surfaceLowest,
-    borderRadius: radii.md,
-    paddingHorizontal: spacing.md,
-    paddingVertical: 14,
-    color: colors.onSurface,
-    fontSize: 16,
-    minHeight: 52,
-  },
+  pad: { flex: 1, paddingHorizontal: screenPaddingX, paddingVertical: spacing.lg, justifyContent: 'center' },
+  sub: { color: colors.textMuted, marginBottom: spacing.xl, fontSize: 15 },
+  label: { color: colors.text, marginBottom: spacing.xs, marginTop: spacing.md },
   row: { flexDirection: 'row', marginTop: spacing.lg, flexWrap: 'wrap' },
-  muted: { color: colors.onSurfaceVariant },
-  link: { color: colors.primary },
-  center: { flex: 1, justifyContent: 'center', padding: spacing.lg },
-  title: { fontSize: 32, color: colors.primary, textAlign: 'center' },
-  hint: { color: colors.onSurfaceVariant, textAlign: 'center', marginTop: spacing.md, lineHeight: 22 },
-  oauthHint: { color: colors.onSurfaceVariant, marginTop: spacing.lg, fontSize: 13 },
+  forgotRow: { marginTop: spacing.md, alignItems: 'flex-end' },
+  muted: { color: colors.textMuted },
+  link: { color: colors.accent },
+  center: { flex: 1, justifyContent: 'center', paddingHorizontal: screenPaddingX, paddingVertical: spacing.lg },
+  hint: { color: colors.textMuted, textAlign: 'center', lineHeight: 22 },
+  oauthHint: { color: colors.textMuted, marginTop: spacing.lg, fontSize: 13 },
 });

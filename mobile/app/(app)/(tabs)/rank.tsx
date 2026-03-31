@@ -1,9 +1,10 @@
 import { Pill } from '@/components/ui/Pill';
 import { TabSegment } from '@/components/ui/TabSegment';
 import { Screen } from '@/components/ui/Screen';
-import { colors, fonts, radii, spacing } from '@/constants/theme';
+import { tabListBottomPadding } from '@/constants/tabBar';
+import { colors, fonts, radii, screenPaddingX, spacing } from '@/constants/theme';
 import { useAuth } from '@/context/AuthContext';
-import { fetchRanking } from '@/lib/api';
+import { fetchFriendsRanking, fetchRanking } from '@/lib/api';
 import { profileInitials } from '@/lib/format';
 import type { Profile } from '@/types/models';
 import { Ionicons } from '@expo/vector-icons';
@@ -11,21 +12,11 @@ import { Image } from 'expo-image';
 import { Link } from 'expo-router';
 import { useFocusEffect } from '@react-navigation/native';
 import { useCallback, useState } from 'react';
-import {
-  FlatList,
-  Pressable,
-  RefreshControl,
-  ScrollView,
-  StyleSheet,
-  Text,
-  View,
-} from 'react-native';
+import { FlatList, Pressable, RefreshControl, StyleSheet, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
-const TAB_BAR_OFFSET = 96;
-
-function levelFromPoints(points: number) {
-  return Math.min(99, 1 + Math.floor(Math.sqrt(Math.max(0, points)) / 2));
+function reputationOf(u: Profile): number {
+  return u.reputation_score ?? u.points;
 }
 
 function Podium({ rows }: { rows: Profile[] }) {
@@ -36,27 +27,38 @@ function Podium({ rows }: { rows: Profile[] }) {
 
   return (
     <View style={styles.podiumRow}>
-      {order.map((user, i) => {
-        const initials = profileInitials(user.display_name, user.username);
+      {order.map((u, i) => {
+        const initials = profileInitials(u.display_name, u.username);
+        const avatarSize = i === 1 ? 48 : 38;
         return (
-          <View key={user.id} style={styles.podiumCol}>
-            {user.avatar_url ? (
-              <Image source={{ uri: user.avatar_url }} style={styles.podiumAvatar} />
-            ) : (
-              <View style={[styles.podiumAvatar, styles.podiumAvatarPh]}>
-                <Text style={[styles.podiumInitials, { fontFamily: fonts.bodySemi }]}>{initials}</Text>
-              </View>
-            )}
-            <Text style={[styles.podiumName, { fontFamily: fonts.bodySemi }]} numberOfLines={1}>
-              {(user.display_name || user.username).split(' ')[0]}
-            </Text>
-            <View style={[styles.podiumBar, { height: heights[i] }]}>
-              <Text style={[styles.podiumPos, { fontFamily: fonts.display, color: rankColors[i] }]}>
-                #{positions[i]}
+          <Link key={u.id} href={`/(app)/user/${u.id}`} asChild>
+            <Pressable style={styles.podiumCol} accessibilityRole="button" accessibilityLabel="Ver perfil">
+              {u.avatar_url ? (
+                <Image
+                  source={{ uri: u.avatar_url }}
+                  style={[styles.podiumAvatar, { width: avatarSize, height: avatarSize, borderRadius: avatarSize / 2 }]}
+                />
+              ) : (
+                <View
+                  style={[
+                    styles.podiumAvatar,
+                    styles.podiumAvatarPh,
+                    { width: avatarSize, height: avatarSize, borderRadius: avatarSize / 2 },
+                  ]}>
+                  <Text style={[styles.podiumInitials, { fontFamily: fonts.bodySemi }]}>{initials}</Text>
+                </View>
+              )}
+              <Text style={[styles.podiumName, { fontFamily: fonts.bodySemi }]} numberOfLines={1}>
+                {(u.display_name || u.username).split(' ')[0]}
               </Text>
-              <Text style={[styles.podiumPts, { fontFamily: fonts.bodySemi }]}>{user.points}pts</Text>
-            </View>
-          </View>
+              <View style={[styles.podiumBar, { height: heights[i] }]}>
+                <Text style={[styles.podiumPos, { fontFamily: fonts.display, color: rankColors[i] }]}>
+                  #{positions[i]}
+                </Text>
+                <Text style={[styles.podiumPts, { fontFamily: fonts.bodySemi }]}>Rep. {reputationOf(u)}</Text>
+              </View>
+            </Pressable>
+          </Link>
         );
       })}
     </View>
@@ -66,13 +68,19 @@ function Podium({ rows }: { rows: Profile[] }) {
 export default function RankScreen() {
   const insets = useSafeAreaInsets();
   const { user } = useAuth();
-  const [tab, setTab] = useState<'global' | 'liga' | 'amigos'>('global');
+  const [tab, setTab] = useState<'global' | 'amigos'>('global');
   const [rows, setRows] = useState<Profile[]>([]);
   const [refreshing, setRefreshing] = useState(false);
 
   const load = useCallback(async () => {
-    setRows(await fetchRanking(60));
-  }, []);
+    if (tab === 'global') {
+      setRows(await fetchRanking(60));
+    } else if (user?.id) {
+      setRows(await fetchFriendsRanking(user.id, 80));
+    } else {
+      setRows([]);
+    }
+  }, [tab, user?.id]);
 
   useFocusEffect(
     useCallback(() => {
@@ -87,45 +95,38 @@ export default function RankScreen() {
   }, [load]);
 
   const header = (
-    <View style={{ paddingTop: Math.max(insets.top, 12) }}>
+    <View>
       <View style={styles.header}>
         <View>
-          <Text style={[styles.sub, { fontFamily: fonts.body }]}>Classificação</Text>
+          <Text style={[styles.sub, { fontFamily: fonts.body }]}>Credibilidade em apostas</Text>
           <Text style={[styles.title, { fontFamily: fonts.display }]}>RANKING</Text>
         </View>
-        <Pill variant="blue">Global</Pill>
+        <Pill
+          variant="blue"
+          leading={
+            <Ionicons name={tab === 'amigos' ? 'people-outline' : 'globe-outline'} size={12} color={colors.blue} />
+          }>
+          {tab === 'global' ? 'Global' : 'Amigos'}
+        </Pill>
       </View>
-      <View style={{ paddingHorizontal: spacing.md, marginBottom: 20 }}>
+      <View style={{ marginBottom: 20 }}>
         <TabSegment
           tabs={[
             { key: 'global', label: 'Global' },
-            { key: 'liga', label: 'Minha Liga' },
             { key: 'amigos', label: 'Amigos' },
           ]}
           active={tab}
           onChange={(k) => setTab(k as typeof tab)}
         />
       </View>
-      {tab === 'global' && rows.length >= 3 ? <Podium rows={rows} /> : null}
-      {tab !== 'global' ? (
-        <Text style={[styles.placeholder, { fontFamily: fonts.body }]}>
-          Ranking por liga e amigos em breve.
-        </Text>
-      ) : null}
+      {rows.length >= 3 ? <Podium rows={rows} /> : null}
     </View>
   );
 
-  if (tab !== 'global') {
-    return (
-      <Screen padded={false} edges={['top']}>
-        <ScrollView
-          contentContainerStyle={{ paddingBottom: insets.bottom + TAB_BAR_OFFSET }}
-          showsVerticalScrollIndicator={false}>
-          {header}
-        </ScrollView>
-      </Screen>
-    );
-  }
+  const scrollContentStyle = {
+    paddingHorizontal: screenPaddingX,
+    paddingBottom: tabListBottomPadding(insets.bottom),
+  };
 
   return (
     <Screen padded={false} edges={['top']}>
@@ -133,15 +134,14 @@ export default function RankScreen() {
         data={rows}
         keyExtractor={(item) => item.id}
         ListHeaderComponent={header}
-        contentContainerStyle={{
-          paddingHorizontal: spacing.md,
-          paddingBottom: insets.bottom + TAB_BAR_OFFSET,
-        }}
+        contentContainerStyle={scrollContentStyle}
         refreshControl={
           <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={colors.accent} />
         }
         ListEmptyComponent={
-          <Text style={[styles.empty, { fontFamily: fonts.body }]}>Sem dados ainda.</Text>
+          <Text style={[styles.empty, { fontFamily: fonts.body }]}>
+            Sem dados ainda. Quando houver mais contas ativas, o ranking aparece aqui.
+          </Text>
         }
         renderItem={({ item, index }) => {
           const rank = index + 1;
@@ -152,11 +152,11 @@ export default function RankScreen() {
           return (
             <Link href={`/(app)/user/${item.id}`} asChild>
               <Pressable
-                style={[styles.row, isMe && styles.rowMe]}
+                style={StyleSheet.flatten([styles.row, isMe ? styles.rowMe : null])}
                 accessibilityRole="button"
                 accessibilityLabel={`${rank} lugar`}>
                 <Text style={[styles.rank, { fontFamily: fonts.display, color: rankColor }]}>
-                  #{rank}
+                  {rank === 1 ? '👑' : `#${rank}`}
                 </Text>
                 {item.avatar_url ? (
                   <Image source={{ uri: item.avatar_url }} style={styles.avatar} />
@@ -179,15 +179,15 @@ export default function RankScreen() {
                     ) : null}
                   </View>
                   <View style={styles.metaRow}>
-                    <Ionicons name="flame-outline" size={14} color="#FF6B35" />
+                    <Ionicons name="ribbon-outline" size={14} color={colors.gold} />
                     <Text style={[styles.meta, { fontFamily: fonts.body }]}>
-                      {item.streak_current} dias de streak
+                      Nv. {item.level} · {item.total_challenges_created ?? 0} apostas
                     </Text>
                   </View>
                 </View>
                 <View style={{ alignItems: 'flex-end' }}>
-                  <Text style={[styles.pts, { fontFamily: fonts.display }]}>{item.points}</Text>
-                  <Text style={[styles.ptsLbl, { fontFamily: fonts.body }]}>PONTOS</Text>
+                  <Text style={[styles.pts, { fontFamily: fonts.display }]}>{reputationOf(item)}</Text>
+                  <Text style={[styles.ptsLbl, { fontFamily: fonts.body }]}>REPUTAÇÃO</Text>
                 </View>
               </Pressable>
             </Link>
@@ -203,12 +203,10 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'flex-start',
-    paddingHorizontal: spacing.md,
     paddingBottom: spacing.md,
   },
   sub: { fontSize: 13, color: colors.textMuted },
   title: { fontSize: 28, color: colors.text, letterSpacing: 1 },
-  placeholder: { color: colors.textMuted, paddingHorizontal: spacing.md, marginBottom: 16 },
   podiumRow: {
     flexDirection: 'row',
     alignItems: 'flex-end',
@@ -216,7 +214,6 @@ const styles = StyleSheet.create({
     gap: 12,
     height: 200,
     marginBottom: 24,
-    paddingHorizontal: spacing.md,
   },
   podiumCol: { alignItems: 'center', gap: 8, maxWidth: 90 },
   podiumAvatar: {

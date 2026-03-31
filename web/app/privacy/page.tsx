@@ -1,7 +1,7 @@
 import Link from "next/link";
 
 export const metadata = {
-  title: "Política de privacidade — DryLeague",
+  title: "Política de privacidade — Eu Duvido!",
 };
 
 export default function PrivacyPage() {
@@ -18,16 +18,16 @@ export default function PrivacyPage() {
       <section className="mt-10 space-y-4">
         <h2 className="text-dl-text font-semibold text-lg">1. Dados que coletamos</h2>
         <p>
-          Conta (e-mail, nome de usuário), conteúdo que você publica (fotos de treino, descrições, comentários),
+          Conta (e-mail, nome de usuário), conteúdo que você publica (apostas, provas, comentários, reações),
           dados de uso do app, identificadores de dispositivo para notificações push quando você optar por
-          recebê-las, e dados necessários ao processamento de pagamentos quando você participar de ligas pagas.
+          recebê-las e dados necessários ao processamento de pagamentos e escrow.
         </p>
       </section>
 
       <section className="mt-8 space-y-4">
         <h2 className="text-dl-text font-semibold text-lg">2. Finalidades</h2>
         <p>
-          Prestação do serviço, autenticação, feeds sociais, ranking e ligas, prevenção a fraude, cumprimento
+          Prestação do serviço, autenticação, feed social, ranking de reputação, prevenção a fraude, cumprimento
           legal, melhoria do produto e comunicações operacionais (ex.: alertas de inatividade, se habilitados).
         </p>
       </section>
@@ -44,8 +44,8 @@ export default function PrivacyPage() {
         <h2 className="text-dl-text font-semibold text-lg">4. Compartilhamento</h2>
         <p>
           Utilizamos provedores de infraestrutura (ex.: Supabase para banco, auth e armazenamento de imagens;
-          Vercel para páginas web legais). Dados públicos do feed podem ser vistos por outros usuários conforme
-          as configurações de visibilidade escolhidas.
+          hospedagem para o site e a aplicação web). Dados públicos do feed podem ser vistos por outros usuários
+          conforme as configurações de visibilidade escolhidas.
         </p>
       </section>
 

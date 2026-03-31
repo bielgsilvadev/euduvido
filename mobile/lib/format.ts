@@ -27,3 +27,15 @@ export function workoutCategoryLabel(description: string): string {
   if (/box|luta/i.test(d)) return 'Combate';
   return 'Musculação';
 }
+
+const WORKOUT_TYPE_LABELS: Record<string, string> = {
+  musculacao: 'Musculação',
+  corrida: 'Corrida',
+  lutas: 'Lutas',
+  outros: 'Outros',
+};
+
+export function workoutTypeLabel(type: string | null | undefined): string | null {
+  if (!type) return null;
+  return WORKOUT_TYPE_LABELS[type] ?? null;
+}

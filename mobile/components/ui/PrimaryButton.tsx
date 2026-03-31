@@ -1,12 +1,14 @@
 import { colors, fonts, radii } from '@/constants/theme';
 import * as Haptics from 'expo-haptics';
-import React from 'react';
+import React, { type ReactNode } from 'react';
+import { LoadingLogo } from '@/components/ui/LoadingLogo';
 import {
   ActivityIndicator,
   Platform,
   Pressable,
   StyleSheet,
   Text,
+  View,
   type ViewStyle,
 } from 'react-native';
 import Animated, {
@@ -23,6 +25,8 @@ type Props = {
   variant?: 'primary' | 'secondary' | 'ghost' | 'danger';
   style?: ViewStyle;
   accessibilityLabel?: string;
+  /** Ícone à esquerda do título (ex.: login social). */
+  leftIcon?: ReactNode;
 };
 
 const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
@@ -35,6 +39,7 @@ export function PrimaryButton({
   variant = 'primary',
   style,
   accessibilityLabel,
+  leftIcon,
 }: Props) {
   const scale = useSharedValue(1);
   const animStyle = useAnimatedStyle(() => ({
@@ -78,14 +83,21 @@ export function PrimaryButton({
         styles.base,
         { backgroundColor: bg },
         variant === 'ghost' && styles.ghost,
-        (disabled || loading) && styles.disabled,
+        disabled && !loading && styles.disabled,
         style,
         animStyle,
       ]}>
       {loading ? (
-        <ActivityIndicator color={fg} />
+        Platform.OS === 'web' ? (
+          <ActivityIndicator color={fg} size="small" accessibilityLabel="A carregar" />
+        ) : (
+          <LoadingLogo size="small" />
+        )
       ) : (
-        <Text style={[styles.label, { color: fg, fontFamily: fonts.bodySemi }]}>{title}</Text>
+        <View style={styles.row}>
+          {leftIcon ? <View style={styles.iconSlot}>{leftIcon}</View> : null}
+          <Text style={[styles.label, { color: fg, fontFamily: fonts.bodySemi }]}>{title}</Text>
+        </View>
       )}
     </AnimatedPressable>
   );
@@ -109,5 +121,15 @@ const styles = StyleSheet.create({
   label: {
     fontSize: 16,
     letterSpacing: 0.2,
+  },
+  row: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 10,
+  },
+  iconSlot: {
+    justifyContent: 'center',
+    alignItems: 'center',
   },
 });

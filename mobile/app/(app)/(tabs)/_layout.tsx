@@ -1,8 +1,9 @@
-import { DryLeagueTabBar } from '@/components/DryLeagueTabBar';
+import { EuDuvidoTabBar } from '@/components/EuDuvidoTabBar';
 import { colors, fonts } from '@/constants/theme';
 import { Ionicons } from '@expo/vector-icons';
 import { type BottomTabBarProps } from '@react-navigation/bottom-tabs';
-import { Tabs } from 'expo-router';
+import type { Href } from 'expo-router';
+import { Tabs, useRouter } from 'expo-router';
 import { BlurView } from 'expo-blur';
 import { Platform, StyleSheet, Text, View } from 'react-native';
 
@@ -37,52 +38,62 @@ function TabLabel({
 }
 
 export default function TabsLayout() {
+  const router = useRouter();
   return (
     <Tabs
-      tabBar={(props: BottomTabBarProps) => <DryLeagueTabBar {...props} />}
+      tabBar={(props: BottomTabBarProps) => <EuDuvidoTabBar {...props} />}
       screenOptions={{
         headerShown: false,
         tabBarActiveTintColor: colors.accent,
         tabBarInactiveTintColor: colors.textMuted,
         tabBarStyle: {
           position: 'absolute',
-          backgroundColor: Platform.OS === 'ios' ? 'transparent' : 'rgba(10,10,11,0.98)',
+          backgroundColor: Platform.OS === 'ios' ? 'transparent' : 'rgba(10,10,10,0.98)',
           borderTopWidth: 1,
           borderTopColor: colors.border,
           elevation: 0,
+          paddingTop: 6,
         },
         tabBarBackground: () =>
           Platform.OS === 'ios' ? (
             <BlurView intensity={85} tint="dark" style={StyleSheet.absoluteFill} />
           ) : (
-            <View style={[StyleSheet.absoluteFill, { backgroundColor: 'rgba(10,10,11,0.98)' }]} />
+            <View style={[StyleSheet.absoluteFill, { backgroundColor: 'rgba(10,10,10,0.98)' }]} />
           ),
       }}>
       <Tabs.Screen
         name="feed"
         options={{
-          tabBarLabel: ({ focused }) => <TabLabel focused={focused} title="Início" showDot />,
+          tabBarLabel: ({ focused }) => <TabLabel focused={focused} title="Feed" showDot />,
           tabBarIcon: ({ focused, color, size }) => (
             <Ionicons name={focused ? 'home' : 'home-outline'} size={size} color={color} />
           ),
         }}
       />
       <Tabs.Screen
-        name="leagues"
+        name="explore"
         options={{
-          tabBarLabel: ({ focused }) => <TabLabel focused={focused} title="Ligas" showDot />,
-          tabBarIcon: ({ color, size }) => <Ionicons name="trophy-outline" size={size} color={color} />,
+          tabBarLabel: ({ focused }) => <TabLabel focused={focused} title="Explorar" showDot />,
+          tabBarIcon: ({ color, size }) => <Ionicons name="compass-outline" size={size} color={color} />,
         }}
       />
       <Tabs.Screen
         name="post"
         options={{
-          tabBarLabel: ({ focused }) => <TabLabel focused={focused} title="Treinar" showDot={false} />,
+          tabBarLabel: ({ focused }) => <TabLabel focused={focused} title="Desafio" showDot={false} />,
           tabBarIcon: ({ focused }) => (
-            <View style={[styles.postCircle, focused && styles.postCircleOn]}>
-              <Ionicons name="add" size={28} color={focused ? '#000' : colors.accent} />
+            <View style={styles.postCircleWrap}>
+              <View style={[styles.postCircle, focused && styles.postCircleOn]}>
+                <Ionicons name="add" size={26} color={focused ? '#fff' : colors.accent} />
+              </View>
             </View>
           ),
+        }}
+        listeners={{
+          tabPress: (e) => {
+            e.preventDefault();
+            router.push('/(app)/create-challenge' as Href);
+          },
         }}
       />
       <Tabs.Screen
@@ -106,12 +117,13 @@ export default function TabsLayout() {
 const styles = StyleSheet.create({
   labelCol: {
     alignItems: 'center',
-    minHeight: 30,
+    minHeight: 22,
     justifyContent: 'flex-start',
   },
   labelText: {
-    fontSize: 10,
+    fontSize: 11,
     fontWeight: '500',
+    lineHeight: 13,
   },
   labelActive: { color: colors.accent },
   labelInactive: { color: colors.textMuted },
@@ -120,19 +132,21 @@ const styles = StyleSheet.create({
     height: 4,
     borderRadius: 2,
     backgroundColor: colors.accent,
-    marginTop: 4,
+    marginTop: 2,
   },
-  dotSpacer: { height: 8, marginTop: 4 },
+  dotSpacer: { height: 6, marginTop: 2 },
+  postCircleWrap: {
+    transform: [{ translateY: -14 }],
+  },
   postCircle: {
-    width: 48,
-    height: 48,
-    borderRadius: 24,
+    width: 44,
+    height: 44,
+    borderRadius: 22,
     backgroundColor: colors.bgCardAlt,
     borderWidth: 1,
     borderColor: colors.border,
     alignItems: 'center',
     justifyContent: 'center',
-    marginBottom: 4,
   },
   postCircleOn: {
     backgroundColor: colors.accent,

@@ -1,4 +1,5 @@
 import { colors, fonts, radii } from '@/constants/theme';
+import type { ReactNode } from 'react';
 import { StyleSheet, Text, View, type ViewStyle } from 'react-native';
 
 type Variant = 'accent' | 'red' | 'gold' | 'blue' | 'purple' | 'muted';
@@ -16,15 +17,20 @@ type Props = {
   children: string;
   variant?: Variant;
   style?: ViewStyle;
+  /** Ícone ou elemento antes do rótulo (ex.: globo no pill “Global”). */
+  leading?: ReactNode;
 };
 
-export function Pill({ children, variant = 'accent', style }: Props) {
+export function Pill({ children, variant = 'accent', style, leading }: Props) {
   const v = variantStyles[variant];
   return (
     <View style={[styles.wrap, { backgroundColor: v.bg }, style]}>
-      <Text style={[styles.txt, { color: v.fg, fontFamily: fonts.bodySemi }]} numberOfLines={1}>
-        {children}
-      </Text>
+      <View style={styles.row}>
+        {leading}
+        <Text style={[styles.txt, { color: v.fg, fontFamily: fonts.bodySemi }]} numberOfLines={1}>
+          {children}
+        </Text>
+      </View>
     </View>
   );
 }
@@ -36,5 +42,6 @@ const styles = StyleSheet.create({
     paddingVertical: 4,
     borderRadius: radii.pill,
   },
+  row: { flexDirection: 'row', alignItems: 'center', gap: 4 },
   txt: { fontSize: 11, fontWeight: '600' },
 });

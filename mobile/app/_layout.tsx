@@ -1,18 +1,21 @@
-import { DryLeagueNavigationTheme } from '@/constants/navigationTheme';
+import { AppToasts } from '@/components/AppToasts';
+import { NativeToastHost } from '@/components/NativeToastHost';
+import { AppNavigationTheme } from '@/constants/navigationTheme';
 import { colors } from '@/constants/theme';
 import { AuthProvider } from '@/context/AuthContext';
-import { BebasNeue_400Regular } from '@expo-google-fonts/bebas-neue';
 import {
-  DMSans_500Medium,
-  DMSans_600SemiBold,
-  DMSans_700Bold,
-} from '@expo-google-fonts/dm-sans';
+  Inter_500Medium,
+  Inter_600SemiBold,
+  Inter_700Bold,
+} from '@expo-google-fonts/inter';
+import { SpaceGrotesk_700Bold } from '@expo-google-fonts/space-grotesk';
 import { ThemeProvider } from '@react-navigation/native';
 import { useFonts } from 'expo-font';
-import { Stack } from 'expo-router';
+import { Stack, usePathname } from 'expo-router';
 import * as SplashScreen from 'expo-splash-screen';
 import { useEffect } from 'react';
-import { ActivityIndicator, View } from 'react-native';
+import { LoadingLogo } from '@/components/ui/LoadingLogo';
+import { Platform, View } from 'react-native';
 import 'react-native-reanimated';
 
 export { ErrorBoundary } from 'expo-router';
@@ -24,11 +27,12 @@ export const unstable_settings = {
 SplashScreen.preventAutoHideAsync();
 
 export default function RootLayout() {
+  const pathname = usePathname();
   const [loaded, error] = useFonts({
-    BebasNeue_400Regular,
-    DMSans_500Medium,
-    DMSans_600SemiBold,
-    DMSans_700Bold,
+    SpaceGrotesk_700Bold,
+    Inter_500Medium,
+    Inter_600SemiBold,
+    Inter_700Bold,
     SpaceMono: require('../assets/fonts/SpaceMono-Regular.ttf'),
   });
 
@@ -40,6 +44,16 @@ export default function RootLayout() {
     if (loaded) SplashScreen.hideAsync();
   }, [loaded]);
 
+  /** Web: tira o foco do link/botão ao mudar de rota, evitando aviso aria-hidden + foco na pilha. */
+  useEffect(() => {
+    if (Platform.OS !== 'web' || typeof document === 'undefined') return;
+    const id = requestAnimationFrame(() => {
+      const el = document.activeElement as HTMLElement | null;
+      el?.blur?.();
+    });
+    return () => cancelAnimationFrame(id);
+  }, [pathname]);
+
   if (!loaded) {
     return (
       <View
@@ -49,14 +63,16 @@ export default function RootLayout() {
           alignItems: 'center',
           justifyContent: 'center',
         }}>
-        <ActivityIndicator color={colors.primary} size="large" />
+        <LoadingLogo />
       </View>
     );
   }
 
   return (
     <AuthProvider>
-      <ThemeProvider value={DryLeagueNavigationTheme}>
+      <ThemeProvider value={AppNavigationTheme}>
+        <AppToasts />
+        <NativeToastHost />
         <Stack
           screenOptions={{
             headerShown: false,

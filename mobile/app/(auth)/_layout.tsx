@@ -10,8 +10,9 @@ export default function AuthLayout() {
         headerTitleStyle: { fontFamily: fonts.displayMedium },
         contentStyle: { backgroundColor: colors.background },
       }}>
-      <Stack.Screen name="login" options={{ title: 'Entrar', headerShown: true }} />
-      <Stack.Screen name="register" options={{ title: 'Criar conta', headerShown: true }} />
+      <Stack.Screen name="login" options={{ headerShown: false }} />
+      <Stack.Screen name="register" options={{ headerShown: false }} />
+      <Stack.Screen name="forgot-password" options={{ title: 'Esqueci a senha', headerShown: true }} />
     </Stack>
   );
 }

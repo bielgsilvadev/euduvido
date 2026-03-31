@@ -1,27 +1,27 @@
 {
   "expo": {
-    "name": "DryLeague",
-    "slug": "dryleague",
+    "name": "Eu Duvido!",
+    "slug": "eu-duvido",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
-    "scheme": "dryleague",
+    "scheme": "euduvido",
     "userInterfaceStyle": "dark",
     "splash": {
-      "image": "./assets/images/splash-icon.png",
+      "image": "./assets/images/logo.png",
       "resizeMode": "contain",
       "backgroundColor": "#0A0A0B"
     },
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "com.dryleague.app",
+      "bundleIdentifier": "com.euduvido.app",
       "infoPlist": {
-        "NSPhotoLibraryUsageDescription": "A DryLeague usa fotos para validar treinos na comunidade.",
-        "NSCameraUsageDescription": "A DryLeague usa a câmera para registrar treinos com prova visual."
+        "NSPhotoLibraryUsageDescription": "O Eu Duvido! usa fotos para provas dos seus desafios.",
+        "NSCameraUsageDescription": "O Eu Duvido! usa a câmera para registrar provas dos desafios."
       }
     },
     "android": {
-      "package": "com.dryleague.app",
+      "package": "com.euduvido.app",
       "adaptiveIcon": {
         "backgroundColor": "#0A0A0B",
         "foregroundImage": "./assets/images/android-icon-foreground.png",
@@ -41,8 +41,8 @@
       [
         "expo-image-picker",
         {
-          "photosPermission": "A DryLeague precisa de acesso às fotos para validar treinos.",
-          "cameraPermission": "A DryLeague usa a câmera para registrar treinos."
+          "photosPermission": "O Eu Duvido! precisa de acesso às fotos para enviar provas.",
+          "cameraPermission": "O Eu Duvido! usa a câmera para provas dos desafios."
         }
       ]
     ],

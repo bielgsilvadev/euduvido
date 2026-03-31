@@ -1,4 +1,4 @@
-import { colors, fonts, radii, spacing } from '@/constants/theme';
+import { colors, fonts, radii, screenPaddingX, spacing } from '@/constants/theme';
 import { Ionicons } from '@expo/vector-icons';
 import { StyleSheet, Text, View } from 'react-native';
 
@@ -27,7 +27,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     gap: 10,
     paddingVertical: 12,
-    paddingHorizontal: spacing.md,
+    paddingHorizontal: screenPaddingX,
     borderRadius: radii.md,
     backgroundColor: 'rgba(255,184,48,0.08)',
     borderWidth: 1,

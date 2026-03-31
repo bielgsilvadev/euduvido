@@ -1,46 +1,75 @@
 /**
- * DryLeague — layout alinhado ao protótipo (Bebas + DM Sans, lime #C8F135)
+ * Eu Duvido! — tema escuro + verde lima da marca (#C8F135), alinhado ao logo.
+ * `primary` / `accent` = verde; `secondary` (no PrimaryButton danger) = vermelho; `tertiary` = ouro (botões secundários).
  */
 
-export const colors = {
+import type { TextStyle } from 'react-native';
+
+export const themeColors = {
+  lime: '#C8F135',
+  limeDark: '#9BC220',
+  limeLight: '#D8F570',
   bg: '#0A0A0B',
   bgCard: '#111114',
   bgCardAlt: '#16161A',
   border: '#1E1E24',
   borderLight: '#2A2A32',
-  accent: '#C8F135',
-  accentDim: '#9BC220',
+  success: '#10B981',
+  danger: '#EF4444',
+  warning: '#FFB830',
+  info: '#4D9FFF',
+  textPrimary: '#F0F0F2',
+  textSecondary: '#6B6B7A',
+  textMuted: '#3A3A44',
+  /** “Eu Acredito!” — verde de apoio */
+  cheerColor: '#C8F135',
+  /** “Eu Duvido!” — contraste sem laranja de marca: ouro */
+  doubtColor: '#FFB830',
+} as const;
+
+export const colors = {
+  bg: themeColors.bg,
+  bgCard: themeColors.bgCard,
+  bgCardAlt: themeColors.bgCardAlt,
+  border: themeColors.border,
+  borderLight: themeColors.borderLight,
+  accent: themeColors.lime,
+  accentDim: themeColors.limeDark,
   accentGlow: 'rgba(200,241,53,0.15)',
   red: '#FF4D4D',
   redDim: 'rgba(255,77,77,0.15)',
-  blue: '#4D9FFF',
+  blue: themeColors.info,
   blueDim: 'rgba(77,159,255,0.12)',
-  gold: '#FFB830',
+  gold: themeColors.warning,
   goldDim: 'rgba(255,184,48,0.15)',
   purple: '#A855F7',
   purpleDim: 'rgba(168,85,247,0.15)',
-  text: '#F0F0F2',
-  textMuted: '#6B6B7A',
-  textDim: '#3A3A44',
-  // aliases usados no código legado
-  background: '#0A0A0B',
-  surfaceLowest: '#0A0A0B',
-  surface: '#0A0A0B',
-  surfaceHigh: '#111114',
+  text: themeColors.textPrimary,
+  textMuted: themeColors.textSecondary,
+  textSecondary: themeColors.textSecondary,
+  textDim: themeColors.textMuted,
+  background: themeColors.bg,
+  surfaceLowest: themeColors.bg,
+  surface: themeColors.bg,
+  surfaceHigh: themeColors.bgCard,
   surfaceVariant: 'rgba(17,17,20,0.95)',
-  primary: '#C8F135',
-  primaryDim: '#9BC220',
+  primary: themeColors.lime,
+  primaryDim: themeColors.limeDark,
   onPrimary: '#000000',
+  /** Usado como fundo do botão danger no PrimaryButton */
   secondary: '#FF4D4D',
-  tertiary: '#FFB830',
-  onSurface: '#F0F0F2',
-  onSurfaceVariant: '#6B6B7A',
-  outlineVariant: '#1E1E24',
+  tertiary: themeColors.warning,
+  onSurface: themeColors.textPrimary,
+  onSurfaceVariant: themeColors.textSecondary,
+  outlineVariant: themeColors.border,
   scrim: 'rgba(0,0,0,0.8)',
-  glassBorder: '#1E1E24',
+  glassBorder: themeColors.border,
+  success: themeColors.success,
+  danger: themeColors.danger,
+  cheer: themeColors.cheerColor,
+  doubt: themeColors.doubtColor,
 } as const;
 
-/** Tons atrás do hero do card (como no mock) */
 export const workoutImageTints = ['#1D3A1A', '#1A1D3A', '#3A1A2A', '#1A3A3A', '#3A3A1A'] as const;
 
 export function tintForId(id: string): string {
@@ -58,6 +87,14 @@ export const spacing = {
   xxl: 48,
 } as const;
 
+export const screenPaddingX = spacing.md;
+
+export const stackHeaderContentGap = spacing.lg;
+
+export function contentTopPadding(safeTop: number): number {
+  return Math.max(safeTop + 8, 20);
+}
+
 export const radii = {
   sm: 8,
   md: 12,
@@ -67,10 +104,23 @@ export const radii = {
 } as const;
 
 export const fonts = {
-  display: 'BebasNeue_400Regular',
-  displayMedium: 'BebasNeue_400Regular',
-  body: 'DMSans_500Medium',
-  bodySemi: 'DMSans_600SemiBold',
-  bodyBold: 'DMSans_700Bold',
+  display: 'SpaceGrotesk_700Bold',
+  displayMedium: 'SpaceGrotesk_700Bold',
+  body: 'Inter_500Medium',
+  bodySemi: 'Inter_600SemiBold',
+  bodyBold: 'Inter_700Bold',
   mono: 'SpaceMono',
 } as const;
+
+export const formTextInputStyle: TextStyle = {
+  backgroundColor: colors.bgCardAlt,
+  borderRadius: radii.md,
+  borderWidth: 1,
+  borderColor: colors.borderLight,
+  paddingVertical: 14,
+  paddingHorizontal: spacing.md + 4,
+  marginHorizontal: spacing.xs,
+  color: colors.onSurface,
+  fontSize: 16,
+  minHeight: 48,
+};

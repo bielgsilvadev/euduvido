@@ -1,6 +1,6 @@
 # Deploy: Supabase, Vercel e GitHub
 
-Guia único para ligar o **mobile** (Expo), o **site** (Next na Vercel) e o **backend** (Supabase) depois de preencher `mobile/.env`.
+Guia único para ligar o **mobile** (Expo), o **deploy web na Vercel** (export Expo = mesma app que no telemóvel) e o **backend** (Supabase) depois de preencher `mobile/.env`.
 
 ---
 
@@ -49,14 +49,18 @@ O `app.config.ts` injeta estes valores em `extra` no build.
 
 ---
 
-## 2. Vercel (pasta `web/`)
+## 2. Vercel (app Expo — pasta `mobile/`)
+
+A URL pública (ex.: `dryleague.vercel.app`) deve servir **a mesma app** que vês no Expo (`expo start` / Expo Go), via **React Native Web** (`expo export --platform web`). Não uses a pasta `web/` (Next.js) como deploy principal do produto.
 
 1. [Vercel](https://vercel.com) → **Add New Project** → importa o repositório **GitHub**.
-2. **Root Directory**: `web` (importante).
-3. Framework: **Next.js** (o `web/vercel.json` já fixa `installCommand` / `buildCommand`).
-4. **Environment Variables** (opcional para já):
-   - `NEXT_PUBLIC_SITE_URL` = URL de produção (ex.: `https://dryleague.vercel.app` ou domínio próprio).
-5. Deploy. Copia a URL final (ex.: `https://dryleague.vercel.app`).
+2. **Root Directory**: **`mobile`** (obrigatório para coincidir com o Expo).
+3. Nome do projeto na Vercel: só **minúsculas**, números, `.`, `_`, `-` (ex.: `dryleague`).
+4. Framework: **Other** (o `mobile/vercel.json` define `installCommand`, `buildCommand` e `outputDirectory: dist`).
+5. **Environment Variables** no painel Vercel (produção): as mesmas que no build local, se precisares de URLs públicas — normalmente `EXPO_PUBLIC_SUPABASE_URL`, `EXPO_PUBLIC_SUPABASE_ANON_KEY`, `EXPO_PUBLIC_LEGAL_*` (ou injeta via EAS/build; para Vercel adiciona em **Settings → Environment Variables**).
+6. Deploy. Copia a URL final (ex.: `https://dryleague.vercel.app`).
+
+A pasta **`web/`** é um site Next opcional (marketing); não confundir com a app DryLeague em produção.
 
 ### Ligar termos/privacidade no app
 
@@ -84,19 +88,19 @@ EXPO_PUBLIC_LEGAL_PRIVACY_URL=https://SUA-URL.vercel.app/privacy
 
 2. O workflow **`.github/workflows/ci.yml`** corre em `push` / `pull_request` para `main` ou `master`:
    - `npm run typecheck` em `mobile/`
-   - `npm run build` em `web/`
+   - `npm run export:web` em `mobile/` (valida o bundle web da app Expo)
 
 3. **Deploy automático (opcional)** — em **Repository → Settings → Secrets and variables → Actions**:
 
    | Secret | Onde obter |
    |--------|------------|
    | `VERCEL_TOKEN` | [vercel.com/account/tokens](https://vercel.com/account/tokens) |
-   | `VERCEL_ORG_ID` | Ficheiro `web/.vercel/project.json` após `npx vercel link` na pasta `web/` (campo `orgId`) |
+   | `VERCEL_ORG_ID` | Ficheiro `mobile/.vercel/project.json` após `npx vercel link` na pasta `mobile/` (campo `orgId`) |
    | `VERCEL_PROJECT_ID` | Idem (`projectId`) |
    | `SUPABASE_ACCESS_TOKEN` | [Supabase Account → Access Tokens](https://supabase.com/dashboard/account/tokens) |
    | `SUPABASE_PROJECT_REF` | Dashboard do projeto → **Settings → General → Reference ID** |
 
-   - **`.github/workflows/deploy-web-vercel.yml`**: deploy do Next em produção quando alteras `web/` na `main`.
+   - **`.github/workflows/deploy-expo-vercel.yml`**: deploy da app Expo (web) em produção quando alteras `mobile/` na `main`.
    - **`.github/workflows/supabase-migrate.yml`**: corre `supabase db push` quando alteras `supabase/migrations/`.
 
 4. **Script local (Windows):** `.\scripts\SETUP-AUTOMATICO.ps1` na raiz — guia `vercel link`, opcional `supabase db push`, e lembra os secrets.
@@ -110,7 +114,7 @@ EXPO_PUBLIC_LEGAL_PRIVACY_URL=https://SUA-URL.vercel.app/privacy
 ## 4. Ordem recomendada
 
 1. Supabase: migration + copiar URL/anon para `mobile/.env`.  
-2. Vercel: deploy do `web/` → copiar URLs `/terms` e `/privacy` para o `.env` do mobile.  
+2. Vercel: deploy da pasta `mobile/` → copiar URLs `/terms` e `/privacy` para o `.env` do mobile (as rotas vêm da app Expo).  
 3. GitHub: push do código → confirmar que o CI fica verde.  
 4. EAS: `eas secret:create` com as mesmas `EXPO_PUBLIC_*` antes do primeiro build de loja.
 
@@ -122,5 +126,5 @@ EXPO_PUBLIC_LEGAL_PRIVACY_URL=https://SUA-URL.vercel.app/privacy
 - [ ] Bucket `workout-photos` OK  
 - [ ] Redirect URLs do Auth alinhadas ao scheme `dryleague`  
 - [ ] `mobile/.env` com Supabase + URLs legais da Vercel  
-- [ ] Vercel com Root Directory = `web`  
+- [ ] Vercel com Root Directory = `mobile`  
 - [ ] Repositório no GitHub com CI a passar  

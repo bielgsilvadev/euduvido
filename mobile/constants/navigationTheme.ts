@@ -1,7 +1,7 @@
 import { colors } from '@/constants/theme';
 import { DarkTheme, type Theme } from '@react-navigation/native';
 
-export const DryLeagueNavigationTheme: Theme = {
+export const AppNavigationTheme: Theme = {
   ...DarkTheme,
   colors: {
     ...DarkTheme.colors,
@@ -10,6 +10,9 @@ export const DryLeagueNavigationTheme: Theme = {
     card: colors.surfaceHigh,
     text: colors.onSurface,
     border: colors.outlineVariant,
-    notification: colors.secondary,
+    notification: colors.red,
   },
 };
+
+/** @deprecated use AppNavigationTheme */
+export const DryLeagueNavigationTheme = AppNavigationTheme;

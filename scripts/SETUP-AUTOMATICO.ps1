@@ -1,6 +1,6 @@
 #Requires -Version 5.1
 <#
-  DryLeague — Vercel (web) + Supabase a partir da máquina local.
+  DryLeague — Vercel (app Expo em mobile/) + Supabase a partir da máquina local.
   Uso (PowerShell, na raiz do repo):
     .\scripts\SETUP-AUTOMATICO.ps1
     .\scripts\SETUP-AUTOMATICO.ps1 -SkipSupabase
@@ -17,9 +17,9 @@ Set-Location $Root
 Write-Host "Raiz do projeto: $Root" -ForegroundColor Cyan
 
 if (-not $SkipVercel) {
-  Write-Host "`n=== Vercel (site em web/) ===" -ForegroundColor Yellow
+  Write-Host "`n=== Vercel (app Expo — pasta mobile/) ===" -ForegroundColor Yellow
   Write-Host "Se falhar autenticação: npx vercel login`n"
-  Push-Location (Join-Path $Root "web")
+  Push-Location (Join-Path $Root "mobile")
   try {
     npx vercel link --yes
     $pj = Join-Path $PWD ".vercel\project.json"
@@ -30,7 +30,7 @@ if (-not $SkipVercel) {
     }
     $deploy = Read-Host "`nDeploy produção agora? (s/N)"
     if ($deploy -eq "s" -or $deploy -eq "S") {
-      npx vercel --prod
+      npx vercel deploy --prod
     }
   } finally {
     Pop-Location

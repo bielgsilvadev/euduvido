@@ -18,9 +18,9 @@ const siteUrl = process.env.NEXT_PUBLIC_SITE_URL;
 
 export const metadata: Metadata = {
   metadataBase: siteUrl ? new URL(siteUrl) : undefined,
-  title: "DryLeague — Fitness gamificado",
+  title: "Eu Duvido! — Apostas P2P sociais",
   description:
-    "Treinos com prova, ligas privadas e ranking. Termos e privacidade para o app DryLeague.",
+    "Duelos entre pessoas reais com dinheiro em jogo, árbitro escolhido e comunidade acompanhando. Termos e privacidade do app Eu Duvido!.",
 };
 
 export default function RootLayout({
