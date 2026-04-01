@@ -63,4 +63,6 @@ O workflow **`.github/workflows/deploy-expo-vercel.yml`** deve usar **`working-d
 - `EXPO_PUBLIC_SUPABASE_ANON_KEY`
 - Opcional: `EXPO_PUBLIC_APP_URL`, `EXPO_PUBLIC_LEGAL_*`, `EXPO_PUBLIC_STRIPE_*` conforme `mobile/.env.example`
 
+O Expo **embuti** `EXPO_PUBLIC_*` no bundle **no build**. Se faltarem no painel da Vercel, o site mostra aviso de configuração — após adicionar/editar, é obrigatório **Redeploy** (novo build).
+
 Quando o utilizador pedir “deploy Vercel”, “vercel prod” ou “igual ao Expo”, seguir **sempre** este fluxo.

@@ -5,7 +5,7 @@ import { colors, fonts, formTextInputStyle, screenPaddingX, spacing } from '@/co
 import { useAuth } from '@/context/AuthContext';
 import { formatAuthSignInError } from '@/lib/authErrors';
 import { notifyError } from '@/lib/notify';
-import { isSupabaseConfigured, supabase } from '@/lib/supabase';
+import { isSupabaseConfigured, supabase, SUPABASE_ENV_MISSING_HINT } from '@/lib/supabase';
 import { Ionicons } from '@expo/vector-icons';
 import { Link, useRouter } from 'expo-router';
 import * as WebBrowser from 'expo-web-browser';
@@ -41,10 +41,7 @@ export default function LoginScreen() {
       <Screen>
         <View style={styles.center}>
           <BrandLogo maxWidth={260} style={{ marginBottom: spacing.lg }} />
-          <Text style={[styles.hint, { fontFamily: fonts.body }]}>
-            Configure EXPO_PUBLIC_SUPABASE_URL e EXPO_PUBLIC_SUPABASE_ANON_KEY no arquivo .env ou em
-            app.json → expo.extra.
-          </Text>
+          <Text style={[styles.hint, { fontFamily: fonts.body }]}>{SUPABASE_ENV_MISSING_HINT}</Text>
         </View>
       </Screen>
     );

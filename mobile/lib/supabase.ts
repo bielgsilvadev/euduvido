@@ -14,6 +14,10 @@ const supabaseAnonKey =
 
 export const isSupabaseConfigured = Boolean(supabaseUrl && supabaseAnonKey);
 
+/** Expo inclui EXPO_PUBLIC_* no bundle na altura do build; na Vercel isso vem das Environment Variables do projeto. */
+export const SUPABASE_ENV_MISSING_HINT =
+  'No painel da Vercel: Settings → Environment Variables → adiciona EXPO_PUBLIC_SUPABASE_URL e EXPO_PUBLIC_SUPABASE_ANON_KEY no ambiente Production e faz Redeploy. No computador: arquivo mobile/.env (veja .env.example) ou extra no app.config.';
+
 function domStorageReady(): boolean {
   return typeof window !== 'undefined' && typeof window.localStorage !== 'undefined';
 }

@@ -24,7 +24,10 @@ export default function CreateLeagueScreen() {
 
   async function submit() {
     if (!isSupabaseConfigured) {
-      notifyError('Configura EXPO_PUBLIC_SUPABASE_URL e EXPO_PUBLIC_SUPABASE_ANON_KEY no .env.', 'Supabase');
+      notifyError(
+        'Configura EXPO_PUBLIC_SUPABASE_URL e EXPO_PUBLIC_SUPABASE_ANON_KEY (Vercel → Environment Variables → Redeploy, ou mobile/.env em local).',
+        'Supabase',
+      );
       return;
     }
     if (!user) {

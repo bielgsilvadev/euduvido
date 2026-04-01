@@ -5,7 +5,7 @@ import { colors, fonts, formTextInputStyle, screenPaddingX, spacing } from '@/co
 import { formatAuthPasswordResetError } from '@/lib/authErrors';
 import { getAuthRedirectUrl } from '@/lib/authRedirect';
 import { notifyError, notifyInfo } from '@/lib/notify';
-import { isSupabaseConfigured, supabase } from '@/lib/supabase';
+import { isSupabaseConfigured, supabase, SUPABASE_ENV_MISSING_HINT } from '@/lib/supabase';
 import { Link } from 'expo-router';
 import { useState } from 'react';
 import {
@@ -26,9 +26,7 @@ export default function ForgotPasswordScreen() {
     return (
       <Screen edges={['bottom']} belowNativeHeader>
         <View style={styles.center}>
-          <Text style={[styles.hint, { fontFamily: fonts.body }]}>
-            Configure EXPO_PUBLIC_SUPABASE_URL e EXPO_PUBLIC_SUPABASE_ANON_KEY no .env.
-          </Text>
+          <Text style={[styles.hint, { fontFamily: fonts.body }]}>{SUPABASE_ENV_MISSING_HINT}</Text>
         </View>
       </Screen>
     );
