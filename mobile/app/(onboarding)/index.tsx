@@ -32,7 +32,7 @@ const INFO_STEPS = [
 
 export default function OnboardingScreen() {
   const router = useRouter();
-  const { user, refreshProfile } = useAuth();
+  const { user, refreshProfile, patchProfile } = useAuth();
 
   const [step, setStep] = useState(0);
   const [accepted, setAccepted] = useState(false);
@@ -80,8 +80,9 @@ export default function OnboardingScreen() {
         return;
       }
 
+      patchProfile({ onboarding_completed: true });
       await refreshProfile();
-      router.replace('/');
+      router.replace('/(app)/(tabs)/feed');
     } catch (e) {
       const msg = e instanceof Error ? e.message : String(e);
       queueMicrotask(() => notifyError(msg || 'Erro inesperado.', 'Eu Duvido!'));

@@ -18,6 +18,8 @@ type AuthContextValue = {
   profile: Profile | null;
   loading: boolean;
   refreshProfile: () => Promise<void>;
+  /** Atualiza o perfil em memória (ex.: após onboarding) antes do próximo render — evita corrida com router.replace('/'). */
+  patchProfile: (patch: Partial<Profile>) => void;
   signOut: () => Promise<void>;
   demoMode: boolean;
 };
@@ -41,6 +43,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     setSession(null);
     setProfile(null);
     setProfileReady(true);
+  }, []);
+
+  const patchProfile = useCallback((patch: Partial<Profile>) => {
+    setProfile((prev) => (prev ? { ...prev, ...patch } : null));
   }, []);
 
   const refreshProfile = useCallback(async () => {
@@ -119,10 +125,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       profile,
       loading,
       refreshProfile,
+      patchProfile,
       signOut,
       demoMode: !isSupabaseConfigured,
     }),
-    [session, profile, loading, refreshProfile, signOut],
+    [session, profile, loading, refreshProfile, patchProfile, signOut],
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
