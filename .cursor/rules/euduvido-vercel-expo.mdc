@@ -10,9 +10,17 @@ alwaysApply: true
 - **O que o utilizador vê em `expo start --web` (ou Expo Go no web)** é o que deve estar em **produção na Vercel**.
 - O código dessa app está em **`mobile/`** (Expo Router + React Native Web). **Não** confundir com **`web/`** (Next.js opcional para marketing ou dev).
 
+## NOT_FOUND / 404 em `*.vercel.app`
+
+- A Vercel mostra **404: NOT_FOUND** quando **não há ficheiros estáticos** na pasta de output do deploy (ex.: nunca correu `expo export` ou o **Root Directory** do projeto aponta para a pasta errada).
+- **Causa típica:** o projeto no dashboard está com **Root Directory vazio** (raiz do Git). A raiz do repo **não** tem `dist/` — o export gera **`mobile/dist`**. O deploy “sucesso” sem artefactos → página em branco ou NOT_FOUND.
+- **Correções (uma basta):**
+  1. **Painel:** Settings → General → **Root Directory** = `mobile` (e Build/Output como em baixo), **ou**
+  2. **Ficheiro na raiz:** existe **`vercel.json`** na raiz do repo com `outputDirectory: mobile/dist` e build em `mobile/`, para deploys mesmo sem Root Directory configurado.
+
 ## O que NUNCA fazer
 
-- Não fazer `vercel --prod` na **raiz do monorepo** sem apontar para `mobile/` — isso publica a raiz errada e gera **404** ou build vazio (`Builds: . [0ms]`).
+- Não assumir que `vercel` na raiz “descobre” o Expo sozinho — sem `vercel.json` na raiz **ou** Root = `mobile`, volta o **NOT_FOUND**.
 - Não dizer que o deploy principal da app é `cd web && vercel`, salvo o utilizador pedir explicitamente o site Next.
 
 ## CLI (deploy manual)
