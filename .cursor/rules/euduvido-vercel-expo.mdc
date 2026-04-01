@@ -34,11 +34,12 @@ npx vercel deploy --prod
 
 Ou em PowerShell: `Set-Location mobile; npx vercel --prod`
 
-O ficheiro **`mobile/vercel.json`** define:
+O ficheiro **`mobile/vercel.json`** (e o **`vercel.json` na raiz**) define:
 
 - `installCommand`: `npm ci`
 - `buildCommand`: `npx expo export --platform web`
-- `outputDirectory`: `dist`
+- `outputDirectory`: `dist` (ou `mobile/dist` na raiz)
+- **`rewrites` → `/index.html`**: fallback SPA para F5/refresh em rotas sem ficheiro estático (ex.: `/challenge/<id>` real). A Vercel serve ficheiros existentes (`/_expo/*`, `/assets/*`, `*.html`) primeiro; só depois aplica o rewrite.
 
 ## Painel Vercel (projeto ligado ao Git)
 
