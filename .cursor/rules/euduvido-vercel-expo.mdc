@@ -1,0 +1,58 @@
+---
+description: Eu Duvido! — produção na Vercel deve ser a mesma app que no Expo (web)
+alwaysApply: true
+---
+
+# Eu Duvido! — Vercel = Expo (mobile/)
+
+## Regra de ouro
+
+- **O que o utilizador vê em `expo start --web` (ou Expo Go no web)** é o que deve estar em **produção na Vercel**.
+- O código dessa app está em **`mobile/`** (Expo Router + React Native Web). **Não** confundir com **`web/`** (Next.js opcional para marketing ou dev).
+
+## O que NUNCA fazer
+
+- Não fazer `vercel --prod` na **raiz do monorepo** sem apontar para `mobile/` — isso publica a raiz errada e gera **404** ou build vazio (`Builds: . [0ms]`).
+- Não dizer que o deploy principal da app é `cd web && vercel`, salvo o utilizador pedir explicitamente o site Next.
+
+## CLI (deploy manual)
+
+Na pasta **`mobile/`**:
+
+```bash
+cd mobile
+npx vercel deploy --prod
+```
+
+Ou em PowerShell: `Set-Location mobile; npx vercel --prod`
+
+O ficheiro **`mobile/vercel.json`** define:
+
+- `installCommand`: `npm ci`
+- `buildCommand`: `npx expo export --platform web`
+- `outputDirectory`: `dist`
+
+## Painel Vercel (projeto ligado ao Git)
+
+Em **Settings → General**:
+
+- **Root Directory** = `mobile`
+
+Em **Build & Development** (se não estiver herdado do `vercel.json`):
+
+- Framework: **Other**
+- Install: `npm ci`
+- Build: `npx expo export --platform web`
+- Output: `dist`
+
+## GitHub Actions
+
+O workflow **`.github/workflows/deploy-expo-vercel.yml`** deve usar **`working-directory: mobile`** e gatilhos em `mobile/**`.
+
+## Variáveis de ambiente na Vercel (Production)
+
+- `EXPO_PUBLIC_SUPABASE_URL`
+- `EXPO_PUBLIC_SUPABASE_ANON_KEY`
+- Opcional: `EXPO_PUBLIC_APP_URL`, `EXPO_PUBLIC_LEGAL_*`, `EXPO_PUBLIC_STRIPE_*` conforme `mobile/.env.example`
+
+Quando o utilizador pedir “deploy Vercel”, “vercel prod” ou “igual ao Expo”, seguir **sempre** este fluxo.

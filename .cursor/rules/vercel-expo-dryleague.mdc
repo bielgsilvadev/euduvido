@@ -1,15 +1,8 @@
 ---
-description: Deploy Vercel — sempre a app Expo (mobile), igual ao que vês no Expo Go/web
-alwaysApply: true
+description: Legado — ver regra principal em euduvido-vercel-expo.mdc
+alwaysApply: false
 ---
 
-# Vercel e DryLeague (regra fixa)
+# (Legado) Vercel + Expo
 
-- **Produção na Vercel = a mesma app que no Expo** (Expo Router + React Native Web). O código fonte é a pasta **`mobile/`**, não `web/`.
-- **`web/`** é um site Next.js à parte (landing/marketing). **Não** usar `web/` como deploy principal do produto nem como substituto da app; não sugerir `cd web && vercel --prod` para “publicar a app”.
-- **CLI:** da raiz do repo, `Set-Location mobile; npx vercel deploy --prod` (ou `cd mobile` em bash). O projeto já tem `mobile/.vercel` e `mobile/vercel.json` com `expo export --platform web` e saída em `dist`.
-- **GitHub Actions:** o workflow de deploy Vercel deve usar **`working-directory: mobile`** e gatilhos em `mobile/**` (ficheiro: `.github/workflows/deploy-expo-vercel.yml` ou equivalente).
-- **Painel Vercel (import Git):** **Root Directory = `mobile`**. Se estiver `web`, alterar para `mobile` para o domínio de produção servir a app Expo.
-- **Build:** `npm ci` + `npx expo export --platform web` dentro de `mobile/`; artefacto **`mobile/dist`**.
-
-Quando o utilizador pedir “deploy Vercel”, “publicar na Vercel” ou “rodar vercel prod”, assume **sempre** este fluxo (Expo em `mobile/`), salvo indicação explícita de outro alvo (ex.: projeto só para o site Next).
+A regra atual do projeto **Eu Duvido!** está em **`euduvido-vercel-expo.mdc`** (`alwaysApply: true`). Este ficheiro mantém-se só por histórico do monorepo.
